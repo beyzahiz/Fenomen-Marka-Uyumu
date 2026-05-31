@@ -1,6 +1,14 @@
 import React from 'react'
 
 const ICONS = {
+  // Türkçe kampanya adları (aktif)
+  spor_kampanyasi     : '⚽',
+  moda_kampanyasi     : '💄',
+  teknoloji_kampanyasi: '💻',
+  yemek_kampanyasi    : '🍽️',
+  annebebek_kampanyasi: '👶',
+  oyun_kampanyasi     : '🎮',
+  // İngilizce kampanya adları (pipeline uyumluluğu)
   beauty_fashion  : '💄',
   lifestyle       : '🌿',
   fitness_health  : '💪',
@@ -14,6 +22,14 @@ const ICONS = {
 }
 
 const LABELS = {
+  // Türkçe kampanya adları (aktif)
+  spor_kampanyasi     : 'Spor',
+  moda_kampanyasi     : 'Moda',
+  teknoloji_kampanyasi: 'Teknoloji',
+  yemek_kampanyasi    : 'Yemek',
+  annebebek_kampanyasi: 'Anne & Bebek',
+  oyun_kampanyasi     : 'Oyun',
+  // İngilizce kampanya adları (pipeline uyumluluğu)
   beauty_fashion  : 'Beauty & Fashion',
   lifestyle       : 'Lifestyle',
   fitness_health  : 'Fitness & Health',

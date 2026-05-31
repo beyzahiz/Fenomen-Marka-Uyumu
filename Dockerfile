@@ -36,13 +36,8 @@ print('SBERT model indirildi')"
 
 # ── Uygulama dosyaları ───────────────────────────────────────
 COPY app.py          ./
-COPY influencer_features.py ./
-COPY influencer_summary_checkpoint.pkl ./
-COPY best_model_xgb.pkl    ./
-COPY label_encoder.pkl     ./
-COPY feature_columns.pkl   ./
-COPY db/                   ./db/
-COPY frontend/             ./frontend/
+COPY pipeline/       ./pipeline/
+COPY db/             ./db/
 
 # ── Ortam değişkenleri ───────────────────────────────────────
 ENV PYTHONIOENCODING=utf-8 \

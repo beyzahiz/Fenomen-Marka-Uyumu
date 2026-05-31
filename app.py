@@ -1,34 +1,20 @@
 # =============================================================================
 # app.py — Flask REST API Sunucusu
-# =============================================================================
-# GÖREV   : Eğitilmiş modelleri ve checkpoint'i yükleyerek HTTP üzerinden
-#           fenomen önerisi sunan REST API'yi ayağa kaldırır.
-#
-# ÇALIŞMA : python app.py  →  http://localhost:5000
+# 6 Türkçe kampanya, views bazlı metrikler
 #
 # ENDPOINT'LER:
 #   POST /recommend              → Marka metnine göre fenomen öner
 #   GET  /influencers            → Tüm fenomen listesi (filtreli)
-#   GET  /influencers/<n>/similar→ Benzer fenomenler (K-Means cluster)
-#   GET  /campaigns              → 10 kampanya tanımı
+#   GET  /influencers/<n>/similar→ Benzer fenomenler (CF / K-Means)
+#   GET  /campaigns              → 6 kampanya tanımı
 #   GET  /stats                  → Sistem istatistikleri
-#   GET  /                       → Frontend arayüzü
-#
-# BAĞIMLILIKLAR (pipeline/ dizininden yüklenir):
-#   influencer_summary_checkpoint.pkl  — 244 fenomenin önceden hesaplanmış skorları
-#   best_model_xgb.pkl / lgbm.pkl      — XGBoost & LightGBM sınıflandırıcıları
-#   label_encoder.pkl / feature_columns.pkl
 #
 # SKOR FORMÜLLERİ:
-#   NFS   = Ridge(engagement_rate, FGR, posts_per_month) → eng_auth etiketi (pipeline/nfs_scoring.py)
+#   NFS   = korelasyon ağırlıklı(engagement_rate, FGR, posts_per_month) → 0-100
 #   SFS   = cosine_sim(SBERT(marka), SBERT(fenomen)) × 100
-#   BAS   = SFS×0.35 + NFS×0.30 + positive_ratio×0.25 + (100-fake_risk)×0.10
-#   FINAL = SFS×0.35 + NFS×0.25 + CFS×0.20 + positive_ratio×0.10 + (100-fake_risk)×0.10
-# =============================================================================
-
-# =============================================================================
-# app.py — Flask REST API Sunucusu
-# Notebook ile uyumlu versiyon — 6 Türkçe kampanya, views bazlı metrikler
+#   CFS   = Σ brand_weight[k] × sim_kampanya[k] × 100
+#   BAS   = SFS×0.35 + NFS×0.30 + SignedSentiment_norm×0.25 + (100-FakeRisk)×0.10
+#   FINAL = SFS×0.40 + NFS×0.20 + CFS×0.20 + SignedSentiment_norm×0.10 + (100-FakeRisk)×0.10
 # =============================================================================
 
 import os
@@ -178,8 +164,8 @@ CAMPAIGN_CATEGORY_ALLOWLIST: dict[str, list[str]] = {
 print("Veri ve modeller yükleniyor...")
 
 _ckpt_candidates = [
-    PIPELINE_DIR / "influencer_summary_checkpoint_safe.pkl",
-    PIPELINE_DIR / "influencer_summary_checkpoint.pkl",
+    PIPELINE_DIR / "influencer_summary_checkpoint.pkl",        # önce güncel
+    PIPELINE_DIR / "influencer_summary_checkpoint_safe.pkl",  # yedek
 ]
 _ckpt_path = next((p for p in _ckpt_candidates if p.exists()), _ckpt_candidates[-1])
 try:
@@ -423,28 +409,26 @@ def calculate_final_score(
 
 
 def predict_ml_label(row: pd.Series, campaign_name: str) -> str:
-    """XGBoost pipeline ile uygunluk etiketi tahmin eder."""
+    """XGBoost ile uygunluk etiketi tahmin eder. feature_columns sırasına göre sample oluşturulur."""
     if xgb_model is None or label_encoder is None or feature_columns is None:
         return "bilinmiyor"
     try:
-        # Pipeline ham veri bekliyor — num_cols + cat_cols formatında
-        num_data = {
+        raw = {
             "engagement_rate"      : float(row.get("engagement_rate", 0)),
             "FGR"                  : float(row.get("FGR", 0)),
             "posts_per_month"      : float(row.get("posts_per_month", 0)),
             "NFS"                  : float(row.get("NFS", 0)),
-            "SFS"                  : float(row.get("sfs", 0)),
+            "SFS"                  : float(row.get("sfs", row.get("SFS", 0))),
             "positive_ratio"       : float(row.get("positive_ratio", 50)),
             "negative_ratio"       : float(row.get("negative_ratio", 20)),
             "avg_sentiment_score"  : float(row.get("avg_sentiment_score", 0.5)),
             "avg_signed_sentiment" : float(row.get("avg_signed_sentiment", 0.0)),
-        }
-        cat_data = {
             "category"    : str(row.get("category", "diğer")),
             "account_type": str(row.get("account_type", "creator")),
             "campaign"    : campaign_name,
         }
-        sample = pd.DataFrame([{**num_data, **cat_data}])
+        # Modelin beklediği sütun sırasına göre hizala (bilinmeyen sütunlar fill_value=0)
+        sample = pd.DataFrame([raw]).reindex(columns=feature_columns, fill_value=0)
         pred_enc = xgb_model.predict(sample)[0]
         return str(label_encoder.inverse_transform([pred_enc])[0])
     except Exception:
@@ -484,23 +468,40 @@ def get_top_n(brand_text: str, top_n: int = 5) -> dict:
     brand_weights = compute_brand_campaign_weights(brand_embedding, brand_text)
     sim_matrix = df[SIM_COLS].fillna(0).to_numpy(dtype=float)
     weight_vec = np.array([brand_weights.get(name, 0.0) for name in CAMPAIGN_NAMES], dtype=float)
-    sim_matrix    = df[SIM_COLS].fillna(0).to_numpy(dtype=float)
-    weight_vec    = np.array([brand_weights.get(name, 0.0) for name in CAMPAIGN_NAMES], dtype=float)
+    df["cfs"]  = (sim_matrix @ weight_vec * 100.0).clip(0, 100).round(2)
 
-    # 3) BAS — signed_sentiment kullan
+    # NFS log-normalizasyonu — dağılım çarpık (maks ~91, ort ~3), log ile aralık daraltılır
+    _nfs_max = float(df["NFS"].max())
+    if _nfs_max > 0:
+        df["_nfs_log"] = (np.log1p(df["NFS"]) / np.log1p(_nfs_max) * 100).clip(0, 100).round(2)
+    else:
+        df["_nfs_log"] = df["NFS"]
+
+    # Sentiment z-score — %79'u 0.58-0.99 bandında sıkışmış, z-score ile ayırt edici hale getirilir
+    # Çıktı: -1 ile +1 arası → mevcut ((x+1)/2)*100 formülüyle 0-100'e map edilir
+    _s_mean = float(df["avg_signed_sentiment"].mean())
+    _s_std  = float(df["avg_signed_sentiment"].std())
+    if _s_std > 1e-6:
+        df["_sent_adj"] = (
+            ((df["avg_signed_sentiment"] - _s_mean) / _s_std).clip(-3, 3) / 3
+        ).round(4)
+    else:
+        df["_sent_adj"] = df["avg_signed_sentiment"].fillna(0.0)
+
+    # 3) BAS — log-NFS ve z-score sentiment kullan
     df["bas"] = df.apply(
         lambda r: calculate_bas(
-            r["sfs"], r["NFS"],
-            r.get("avg_signed_sentiment", 0.0),
+            r["sfs"], r["_nfs_log"],
+            r["_sent_adj"],
             r["fake_followers_risk"]
         ), axis=1
     )
 
-    # 4) Final Score
+    # 4) Final Score — log-NFS ve z-score sentiment kullan
     df["final_score"] = df.apply(
         lambda r: calculate_final_score(
-            r["sfs"], r["NFS"], r["cfs"],
-            r.get("avg_signed_sentiment", 0.0),
+            r["sfs"], r["_nfs_log"], r["cfs"],
+            r["_sent_adj"],
             r["fake_followers_risk"]
         ), axis=1
     )
@@ -550,6 +551,7 @@ def get_top_n(brand_text: str, top_n: int = 5) -> dict:
         lambda r: predict_ml_label(r, closest_camp), axis=1
     )
     df_filtered["ai_adjustment"] = df_filtered["ml_label"].apply(ml_label_adjustment)
+    df_filtered["raw_final_score"] = df_filtered["final_score"].round(2)
     df_filtered["final_score"] = (
         df_filtered["final_score"].astype(float) + df_filtered["ai_adjustment"].astype(float)
     ).clip(0, 100).round(2)
@@ -573,7 +575,7 @@ def get_top_n(brand_text: str, top_n: int = 5) -> dict:
     base_cols = [
         "influencer_name", "category", "account_type",
         "NFS", "sfs", "cfs", "bas", "final_score",
-        "ai_adjustment", "ml_label",
+        "raw_final_score", "ai_adjustment", "ml_label",
         "positive_ratio", "avg_signed_sentiment",
         "fake_followers_risk", "risk_category",
         "avg_views", "engagement_rate",

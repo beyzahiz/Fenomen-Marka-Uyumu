@@ -398,16 +398,41 @@ def cosine_sim(a, b):
     return float(np.dot(a, b) / (np_norm(a) * np_norm(b) + 1e-10))
 
 BRAND_CAMPAIGNS = {
-    "beauty_fashion"  : "Guzellik ve moda markasiyiz. Skincare, makyaj, parfum, aksesuar, spf, cilt bakimi, kombin ve trend giyim icerikleri üreten fenomenlerle çalışmak istiyoruz.",
-    "lifestyle"       : "Yasam tarzi markasiyiz. Gunluk hayat, vlog, evde yasam, ozelbakım, aile, uretkenlik ve minimalizm icerikleri ureten fenomenler ariyoruz.",
-    "fitness_health"  : "Saglik ve fitness markasiyiz. Gym, pilates, yoga, beslenme, wellness, mental saglik ve aktif yasam icerikleri ureten fenomenler ariyoruz.",
-    "food_gastronomy" : "Gida ve gastronomi markasiyiz. Yemek tarifleri, restoran, kahve, tatli, gurme ve saglikli beslenme icerikleri ureten fenomenler ariyoruz.",
-    "technology"      : "Teknoloji markasiyiz. Yazilim, yapay zeka, akilli cihazlar, uygulama, siber guvenlik ve dijital icerikler ureten fenomenler ariyoruz.",
-    "gaming"          : "Oyun ve e-spor markasiyiz. FPS, MOBA, streaming, cihaz incelemeleri, twitch ve e-spor icerikleri ureten fenomenler ariyoruz.",
-    "travel"          : "Seyahat ve turizm markasiyiz. Oteller, ucak, kamp, dijital nomad, lüks seyahat ve gezi deneyimleri paylasan fenomenler ariyoruz.",
-    "finance_business": "Finans ve is dunyasi markasiyiz. Yatirim, kripto, borsa, girisim, e-ticaret ve kisisel finans icerikleri ureten fenomenler ariyoruz.",
-    "entertainment"   : "Eglence ve medya markasiyiz. Komedi, muzik, sinema, dizi, meme, dans ve viral icerik ureten fenomenler ariyoruz.",
-    "sports"          : "Spor ve atletizm markasiyiz. Futbol, basketbol, motorsports, formula1, bisiklet ve atletizm icerikleri ureten fenomenler ariyoruz.",
+    "spor_kampanyasi": (
+        "Spor giyim markasıyız. Fitness, spor salonu, koşu, yoga ve aktif yaşam tarzı "
+        "içerikleri üreten fenomenlerle çalışmak istiyoruz. Antrenman rutinleri, spor "
+        "beslenme önerileri, motivasyon içerikleri ve sağlıklı yaşam paylaşımları "
+        "yapan içerik üreticileri arıyoruz."
+    ),
+    "moda_kampanyasi": (
+        "Moda ve güzellik markasıyız. Stil önerileri, kombin paylaşımları, makyaj "
+        "ve güzellik içerikleri üreten fenomenlerle çalışmak istiyoruz. Sokak modası, "
+        "trend takibi, aksesuar ve kıyafet incelemeleri yapan içerik üreticileri arıyoruz."
+    ),
+    "teknoloji_kampanyasi": (
+        "Teknoloji ve elektronik markasıyız. Cihaz incelemeleri, yazılım geliştirme, "
+        "yapay zeka, kodlama ve dijital inovasyon içerikleri üreten fenomenlerle "
+        "çalışmak istiyoruz. Ürün karşılaştırmaları ve teknoloji haberleri paylaşan "
+        "içerik üreticileri arıyoruz."
+    ),
+    "yemek_kampanyasi": (
+        "Gıda ve mutfak markasıyız. Yemek tarifleri, restoran incelemeleri, sağlıklı "
+        "beslenme ve mutfak içerikleri üreten fenomenlerle çalışmak istiyoruz. "
+        "Ev yemekleri, gurme deneyimler ve pratik tarifler paylaşan içerik "
+        "üreticileri arıyoruz."
+    ),
+    "annebebek_kampanyasi": (
+        "Anne ve bebek ürünleri markasıyız. Annelik deneyimleri, bebek bakımı, "
+        "çocuk gelişimi ve aile yaşamı içerikleri üreten fenomenlerle çalışmak "
+        "istiyoruz. Hamilelik süreci, emzirme, bebek beslenmesi ve ebeveynlik "
+        "önerileri paylaşan içerik üreticileri arıyoruz."
+    ),
+    "oyun_kampanyasi": (
+        "Oyun ve e-spor markasıyız. Oyun incelemeleri, canlı yayın, e-spor turnuvaları "
+        "ve gaming setup içerikleri üreten fenomenlerle çalışmak istiyoruz. "
+        "Strateji oyunları, FPS oyunları ve oyun dünyası haberleri paylaşan "
+        "içerik üreticileri arıyoruz."
+    ),
 }
 
 inf_texts_list      = influencer_texts["influencer_text"].astype(str).tolist()
@@ -469,20 +494,27 @@ print(f"✅ {len(merged_sent)} post için duygu analizi tamamlandı")
 print("\nDuygu dağılımı:")
 print(merged_sent["sentiment_label"].value_counts())
 
+merged_sent["signed_score"] = merged_sent.apply(
+    lambda r: r["sentiment_score"] if r["sentiment_label"] == "positive" else -r["sentiment_score"],
+    axis=1,
+)
+
 sentiment_summary = merged_sent.groupby("influencer_name").apply(
     lambda g: pd.Series({
-        "total_posts"       : len(g),
-        "positive_count"    : (g["sentiment_label"] == "positive").sum(),
-        "negative_count"    : (g["sentiment_label"] == "negative").sum(),
-        "positive_ratio"    : (g["sentiment_label"] == "positive").mean() * 100,
-        "negative_ratio"    : (g["sentiment_label"] == "negative").mean() * 100,
-        "avg_sentiment_score": g["sentiment_score"].mean(),
+        "total_posts"          : len(g),
+        "positive_count"       : (g["sentiment_label"] == "positive").sum(),
+        "negative_count"       : (g["sentiment_label"] == "negative").sum(),
+        "positive_ratio"       : (g["sentiment_label"] == "positive").mean() * 100,
+        "negative_ratio"       : (g["sentiment_label"] == "negative").mean() * 100,
+        "avg_sentiment_score"  : g["sentiment_score"].mean(),
+        "avg_signed_sentiment" : g["signed_score"].mean(),
     })
 ).reset_index()
 
 influencer_summary = influencer_summary.merge(
     sentiment_summary[
-        ["influencer_name","positive_ratio","negative_ratio","avg_sentiment_score"]
+        ["influencer_name","positive_ratio","negative_ratio",
+         "avg_sentiment_score","avg_signed_sentiment"]
     ],
     on="influencer_name",
     how="left",
@@ -651,16 +683,12 @@ print("BÖLÜM 7 — UYGUNLUK ETİKETİ + ML MODEL EĞİTİMİ")
 print("=" * 65)
 
 CAMPAIGN_COLUMNS = {
-    "beauty_fashion"  : "sim_beauty_fashion",
-    "lifestyle"       : "sim_lifestyle",
-    "fitness_health"  : "sim_fitness_health",
-    "food_gastronomy" : "sim_food_gastronomy",
-    "technology"      : "sim_technology",
-    "gaming"          : "sim_gaming",
-    "travel"          : "sim_travel",
-    "finance_business": "sim_finance_business",
-    "entertainment"   : "sim_entertainment",
-    "sports"          : "sim_sports",
+    "spor_kampanyasi"     : "sim_spor_kampanyasi",
+    "moda_kampanyasi"     : "sim_moda_kampanyasi",
+    "teknoloji_kampanyasi": "sim_teknoloji_kampanyasi",
+    "yemek_kampanyasi"    : "sim_yemek_kampanyasi",
+    "annebebek_kampanyasi": "sim_annebebek_kampanyasi",
+    "oyun_kampanyasi"     : "sim_oyun_kampanyasi",
 }
 
 rows = []

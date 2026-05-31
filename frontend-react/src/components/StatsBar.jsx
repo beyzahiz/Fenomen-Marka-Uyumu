@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001'
 
 const PILLS = [
   { icon: '👤', valKey: 'total_influencers', lbl: 'Fenomen',    fmt: v => v },
