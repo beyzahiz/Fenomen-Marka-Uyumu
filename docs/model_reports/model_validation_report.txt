@@ -1,0 +1,65 @@
+=================================================================
+FENOMEN-MARKA ESLESTIRME — MODEL DOGRULAMA RAPORU
+TÜBİTAK 2209-A Projesi
+=================================================================
+
+1. VERI SETI
+----------------------------------------
+  Toplam ornek  : 2440
+  Egitim seti   : 1952
+  Test seti     : 488
+  Sinif sayisi  : 3 (orta, uygun, uygun_degil)
+
+  Etiket dagilimi:
+    uygun_degil: 1367
+    orta: 873
+    uygun: 200
+
+2. MODEL PERFORMANSI
+----------------------------------------
+  Model            Accuracy      F1  Precision   Recall
+  XGBoost             0.998   0.998      0.998    0.998
+  LightGBM            0.994   0.994      0.994    0.994
+  RandomForest        0.998   0.998      0.998    0.998
+
+3. OVERFITTING ANALIZI
+----------------------------------------
+  XGBoost         Train=0.999  Test=0.998  Fark=0.002  OK
+  LightGBM        Train=1.000  Test=0.994  Fark=0.006  OK
+  RandomForest    Train=1.000  Test=0.998  Fark=0.002  OK
+
+4. CROSS VALIDATION (5-Fold)
+----------------------------------------
+  XGBoost        : 0.993 +/- 0.004
+  LightGBM       : 0.995 +/- 0.003
+  RandomForest   : 0.989 +/- 0.006
+
+5. SINIFLANDIRMA RAPORU (XGBoost)
+----------------------------------------
+              precision    recall  f1-score   support
+
+        orta       0.99      1.00      1.00       175
+       uygun       1.00      1.00      1.00        40
+ uygun_degil       1.00      1.00      1.00       273
+
+    accuracy                           1.00       488
+   macro avg       1.00      1.00      1.00       488
+weighted avg       1.00      1.00      1.00       488
+
+6. FEATURE IMPORTANCE (Top 15)
+----------------------------------------
+  SFS                                      0.6492
+  NFS                                      0.2741
+  positive_ratio                           0.0455
+  negative_comment_ratio                   0.0095
+  avg_sentiment_score                      0.0052
+  category_yemek                           0.0034
+  neutral_comment_ratio                    0.0029
+  account_type_makro                       0.0028
+  posts_per_month                          0.0019
+  positive_comment_ratio                   0.0015
+  avg_comment_sentiment                    0.0014
+  engagement_rate                          0.0014
+  comment_count                            0.0010
+  account_type_mega                        0.0003
+  negative_ratio                           0.0000

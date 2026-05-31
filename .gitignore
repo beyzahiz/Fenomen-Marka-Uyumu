@@ -1,0 +1,32 @@
+# Sanal ortam
+.venv/
+venv/
+env/
+
+# Python önbellek
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Log dosyaları
+*.log
+api_out.txt
+api_err.txt
+api_stdout.txt
+api_stderr.txt
+docker_build.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Geçici
+*.tmp
+*.zip
+~$*
+*.pyc
+.ipynb_checkpoints/

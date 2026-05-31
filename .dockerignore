@@ -1,0 +1,44 @@
+# Sanal ortam — container kendi kurar
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Geliştirme araçları
+*.ipynb
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker dosyaları (kendisi)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Log dosyaları
+*.log
+api_stdout.txt
+api_stderr.txt
+api_log.txt
+
+# Geliştirme verisi (container'a gerekmez)
+influencer_profiles.csv
+influencer_posts.csv
+
+# Analiz pipeline (sadece model üretir, çalışma zamanında gerekmez)
+analiz_pipeline.py
+
+# Dökümantasyon
+*.md
+*.pdf
+*.zip

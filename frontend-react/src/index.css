@@ -1,0 +1,46 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --surface:  rgba(255,255,255,0.62);
+  --surface2: rgba(255,255,255,0.45);
+
+  --border:  rgba(255,255,255,0.68);
+  --borderh: rgba(255,255,255,0.92);
+
+  --accent:  #5046e5;
+  --accent2: #7c72f8;
+
+  --t1:  #0f0c2e;
+  --t2:  #4a4e7e;
+  --t3:  #8b8fb5;
+
+  --nfs: #5046e5;
+  --sfs: #0891b2;
+  --cfs: #7c3aed;
+  --bas: #059669;
+
+  --sh:  0 4px 24px rgba(80,70,229,0.10), inset 0 1px 0 rgba(255,255,255,0.85);
+  --shh: 0 12px 48px rgba(80,70,229,0.18), inset 0 1px 0 rgba(255,255,255,0.95);
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  background-color: #e8e3ff;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 8%  6%,  rgba(167,139,250,0.65) 0%, transparent 62%),
+    radial-gradient(ellipse 65% 50% at 90% 4%,  rgba(96, 165,250,0.50) 0%, transparent 62%),
+    radial-gradient(ellipse 60% 50% at 70% 95%, rgba(52, 211,153,0.40) 0%, transparent 62%),
+    radial-gradient(ellipse 75% 55% at 4%  92%, rgba(251,191,36, 0.22) 0%, transparent 62%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(139,92, 246,0.12) 0%, transparent 60%);
+  background-attachment: fixed;
+  color: var(--t1);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(80,70,229,0.25); border-radius: 99px; }

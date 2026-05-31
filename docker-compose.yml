@@ -1,0 +1,67 @@
+version: '3.9'
+
+services:
+
+  # ── 1. Veritabanı katmanı ────────────────────────────────────────────────────
+  db:
+    image: mongo:7
+    container_name: fenomen_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── 2. Backend (Flask REST API) ─────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fenomen-marka-eslestirme:latest
+    container_name: fenomen_marka_api
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONIOENCODING=utf-8
+      - PORT=5000
+      - MONGO_URI=mongodb://db:27017
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # ── 3. Frontend (React.js) ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    image: fenomen-marka-frontend:latest
+    container_name: fenomen_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

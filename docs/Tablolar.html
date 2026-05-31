@@ -1,0 +1,214 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tez İçin Tablolar</title><style>body{font-family:Arial,Helvetica,sans-serif;line-height:1.5;color:#172033;max-width:1120px;margin:32px auto;padding:0 24px;background:#f6f7fb}main{background:#fff;border:1px solid #d9deea;padding:34px;border-radius:8px}h1{font-size:28px;margin-top:0}h2{font-size:20px;margin-top:34px;border-bottom:1px solid #e3e7ef;padding-bottom:8px}table{border-collapse:collapse;width:100%;margin:14px 0 24px;background:#fff;table-layout:auto}th,td{border:1px solid #cfd6e4;padding:8px 10px;vertical-align:top;font-size:13px}th{background:#eef3fb;text-align:left;font-weight:700}code{background:#f1f4f8;padding:2px 4px;border-radius:4px}blockquote{background:#fff8df;border:1px solid #efd47a;padding:10px 12px;border-radius:6px;margin:14px 0}hr{border:0;border-top:1px solid #d9deea;margin:26px 0}@media print{body{background:white;margin:0}main{border:0}}</style></head><body><main><h1>Tez İçin Kullanılabilecek Tablolar</h1>
+<p>Bu dosya, tez metnine doğrudan alınabilecek tablo taslaklarını tek yerde toplamak için hazırlanmıştır. Tablolar; geliştirme süreci raporu, model doğrulama çıktıları, QA test sonuçları ve proje mimarisi üzerinden derlenmiştir.</p>
+<blockquote>Not: Tezde numaralandırma yaparken bu dosyadaki "Tablo A/B/C" başlıklarını kendi tez sıralamana göre "Tablo 3.1, Tablo 3.2..." biçiminde güncelleyebilirsin.</blockquote>
+<hr>
+<h2>Tablo A - Veri Kaynağı Dağılımı</h2>
+<table>
+<tr><th>Veri Kaynağı</th><th>Kayıt Sayısı</th><th>Kullanım Amacı</th></tr>
+<tr><td>Instagram kaynaklı gerçek profiller</td><td>144</td><td>Nihai öneri kalitesini gerçek sosyal medya verisi üzerinde test etmek</td></tr>
+<tr><td>Sentetik kontrol profilleri</td><td>100</td><td>Model geliştirme, dengeleme ve kontrollü test senaryoları</td></tr>
+<tr><td>Toplam</td><td>244</td><td>Fenomen-marka eşleştirme sisteminin ana veri kümesi</td></tr>
+</table>
+<hr>
+<h2>Tablo B - Veri Setinde Kullanılan Temel Alanlar</h2>
+<table>
+<tr><th>Veri Alanı</th><th>Açıklama</th><th>Sistemdeki Kullanım Amacı</th></tr>
+<tr><td><code>username</code></td><td>Fenomen hesabı</td><td>Profil kimliği ve sonuç listesi gösterimi</td></tr>
+<tr><td><code>category</code></td><td>İçerik kategorisi</td><td>Sert kategori kontrolü ve alaka doğrulama</td></tr>
+<tr><td><code>followers</code></td><td>Takipçi sayısı</td><td>Erişim potansiyeli ve hesap ölçeği belirleme</td></tr>
+<tr><td><code>engagement_rate</code></td><td>Etkileşim oranı</td><td>Performans değerlendirmesi</td></tr>
+<tr><td><code>clean_tags_all</code></td><td>Temizlenmiş metin havuzu</td><td>SBERT ve TF-IDF/KFS katmanlarının metinsel girdisi</td></tr>
+<tr><td><code>positive_ratio</code></td><td>Pozitif duygu oranı</td><td>İçerik tonunu temsil eden yardımcı ML girdisi</td></tr>
+<tr><td><code>negative_ratio</code></td><td>Negatif duygu oranı</td><td>İçerik tonunu temsil eden yardımcı ML girdisi</td></tr>
+<tr><td><code>avg_sentiment_score</code></td><td>Ortalama duygu skoru</td><td>İçerik dilinin genel duygu yönelimi</td></tr>
+<tr><td><code>fake_risk</code></td><td>Sahte takipçi / güvenilirlik riski</td><td>Risk cezası ve marka güvenliği kontrolü</td></tr>
+<tr><td><code>data_source</code></td><td>Instagram veya sentetik kaynak bilgisi</td><td>Gerçek/sentetik veri ayrımı ve sonuç adaleti</td></tr>
+<tr><td><code>ml_label</code></td><td>XGBoost uygunluk çıktısı</td><td>Açıklanabilir yapay zekâ etiketi</td></tr>
+</table>
+<hr>
+<h2>Tablo C - Ölçülebilir Bilimsel Hedefler</h2>
+<table>
+<tr><th>Hedef</th><th>Ölçüt / Beklenen Sonuç</th></tr>
+<tr><td>Fenomen verilerinden anlamlı öznitelik çıkarımı</td><td>Profil, etkileşim, kategori ve metinsel içerik alanlarından model girdilerinin üretilmesi</td></tr>
+<tr><td>Yapay zekâ modelinin doğruluk oranı</td><td>Accuracy, precision, recall ve F1-score metrikleri ile model başarımının raporlanması</td></tr>
+<tr><td>NLP tabanlı anlamsal eşleştirme başarımı</td><td>SBERT ve TF-IDF tabanlı metinsel temsil katmanlarıyla marka-fenomen uyumunun ölçülmesi</td></tr>
+<tr><td>Prototip sistemin kullanıcı tarafında doğrulanması</td><td>Farklı kampanya senaryolarında önerilerin kategori ve marka uyumu açısından incelenmesi</td></tr>
+</table>
+<hr>
+<h2>Tablo D - Veri Ön İşleme Adımları</h2>
+<table>
+<tr><th>Ön İşleme Adımı</th><th>Amaç</th><th>Model Üzerindeki Etki</th></tr>
+<tr><td>Küçük harfe dönüştürme</td><td>Yazım biçimi farklılıklarını azaltmak</td><td>Aynı kelimelerin tek biçimde temsil edilmesi</td></tr>
+<tr><td>Ticari gürültü temizleme</td><td>Reklam, kampanya ve jenerik ifadeleri azaltmak</td><td>SBERT benzerliğinin gerçek semantik içeriğe odaklanması</td></tr>
+<tr><td>Hashtag sadeleştirme</td><td>Sosyal medya etiketlerini anlamlı metin sinyaline dönüştürmek</td><td>TF-IDF ve SBERT için daha temiz metin temsili</td></tr>
+<tr><td>Eksik değer doldurma</td><td>Model girişlerinde hata oluşmasını engellemek</td><td>Fail-safe ve kesintisiz tahmin</td></tr>
+<tr><td>Kategori doğrulama</td><td>Yanlış kategori sızıntısını azaltmak</td><td>Hard Relevance Layer için güvenilir kategori alanı</td></tr>
+</table>
+<hr>
+<h2>Tablo E - Öznitelik Katmanları</h2>
+<table>
+<tr><th>Öznitelik Katmanı</th><th>Kullanılan Yöntem</th><th>Ölçtüğü Sinyal</th><th>Sistemdeki Rolü</th></tr>
+<tr><td>SFS</td><td>Sentence-BERT + Cosine Similarity</td><td>Marka metni ile fenomen içeriği arasındaki anlamsal yakınlık</td><td>Ana semantik eşleştirme sinyali</td></tr>
+<tr><td>KFS</td><td>TF-IDF + Cosine Similarity</td><td>Kampanya anahtar ifadelerinin fenomen metninde temsil edilme düzeyi</td><td>Açıklanabilir kelime tabanlı destek sinyali</td></tr>
+<tr><td>NFS</td><td>Niş / kategori uygunluğu</td><td>Fenomenin içerik dikeyinin kampanya alanıyla uyumu</td><td>Alaka ve uzmanlık kontrolü</td></tr>
+<tr><td>CFS</td><td>Kampanya / kitle uyumu</td><td>Kampanya profili ile fenomen kitlesi arasındaki uyum</td><td>Marka hedef kitlesi ile eşleştirme</td></tr>
+<tr><td>Risk sinyalleri</td><td><code>fake_risk</code> ve benzeri sayısal alanlar</td><td>Güvenilirlik ve kalite riski</td><td>Düşük güvenilirlik durumunda ceza uygulama</td></tr>
+<tr><td>Duygu oranları</td><td>Pozitif / negatif oranlar</td><td>İçerik tonuna ilişkin sayısal gösterge</td><td>Yardımcı model girdisi</td></tr>
+</table>
+<hr>
+<h2>Tablo F - Yapay Zekâ Destekli Karar Mimarisi</h2>
+<table>
+<tr><th>Mimari Katman</th><th>Girdi</th><th>Sistem İçindeki Görev</th><th>Çıktı</th></tr>
+<tr><td>SBERT Semantik Katmanı</td><td>Marka metni ve fenomen içerikleri</td><td>Anlamsal yakınlığı hesaplar</td><td>SFS</td></tr>
+<tr><td>TF-IDF / KFS Katmanı</td><td>Kampanya anahtar ifadeleri ve temizlenmiş fenomen metni</td><td>Kelime/ifade temsil düzeyini ölçer</td><td>KFS skoru</td></tr>
+<tr><td>XGBoost Karar Katmanı</td><td>Sayısal ve metinsel öznitelikler</td><td>Fenomenin uygunluk durumunu sınıflandırır</td><td><code>ml_label</code></td></tr>
+<tr><td>Kategori / Niş Katmanı</td><td>Fenomen kategorisi ve kampanya dikeyi</td><td>Kategori uyumunu kontrol eder</td><td>NFS</td></tr>
+<tr><td>Kampanya / Kitle Katmanı</td><td>Kampanya profili ve fenomen kitle sinyalleri</td><td>Hedef kitle uyumunu değerlendirir</td><td>CFS</td></tr>
+<tr><td>Risk Katmanı</td><td><code>fake_risk</code> ve güvenilirlik göstergeleri</td><td>Düşük güvenilirlikte skoru cezalandırır</td><td>Risk cezası</td></tr>
+<tr><td>Hard Relevance Layer</td><td>Kategori uyumsuzluğu</td><td>Alakasız profillerin üst sıralara çıkmasını engeller</td><td>Filtrelenmiş öneri listesi</td></tr>
+<tr><td>Arayüz / XAI Katmanı</td><td>Final skor ve <code>ml_label</code></td><td>Kullanıcıya açıklanabilir sonuç sunar</td><td>AI uygunluk rozeti ve öneri kartı</td></tr>
+</table>
+<hr>
+<h2>Tablo G - Makine Öğrenmesi Modellerinin Sistemdeki Rolü</h2>
+<table>
+<tr><th>Model</th><th>Kullanım Amacı</th><th>Avantajı</th><th>Sistemdeki Rolü</th></tr>
+<tr><td>XGBoost</td><td>Ana uygunluk sınıflandırması</td><td>Tablosal verilerde yüksek başarı, hızlı çıkarım ve farklı öznitelikleri birlikte değerlendirme</td><td>Ana karar destek modeli olarak <code>ml_label</code> ve uygunluk skoru üretir</td></tr>
+<tr><td>LightGBM</td><td>Karşılaştırmalı model</td><td>Hızlı eğitim ve gradyan artırma tabanlı alternatif yapı</td><td>Benchmark amacıyla test edilmiştir</td></tr>
+<tr><td>Random Forest</td><td>Karşılaştırmalı model</td><td>Topluluk öğrenmesi ile overfitting riskini azaltma</td><td>Model karşılaştırmasında referans topluluk yöntemi olarak kullanılmıştır</td></tr>
+<tr><td>Logistic Regression</td><td>Referans model</td><td>Basit, açıklanabilir ve doğrusal karar sınırı sunma</td><td>Temel karşılaştırma modeli olarak kullanılmıştır</td></tr>
+</table>
+<hr>
+<h2>Tablo H - Model Performans Karşılaştırması</h2>
+<table>
+<tr><th>Model</th><th>Accuracy</th><th>F1 (Weighted)</th><th>Precision</th><th>Recall</th></tr>
+<tr><td>XGBoost</td><td>0.998</td><td>0.998</td><td>0.998</td><td>0.998</td></tr>
+<tr><td>LightGBM</td><td>0.994</td><td>0.994</td><td>0.994</td><td>0.994</td></tr>
+<tr><td>RandomForest</td><td>0.998</td><td>0.998</td><td>0.998</td><td>0.998</td></tr>
+</table>
+<hr>
+<h2>Tablo I - Overfitting Analizi</h2>
+<table>
+<tr><th>Model</th><th>Train Skoru</th><th>Test Skoru</th><th>Fark</th><th>Durum</th></tr>
+<tr><td>XGBoost</td><td>0.999</td><td>0.998</td><td>0.002</td><td>OK</td></tr>
+<tr><td>LightGBM</td><td>1.000</td><td>0.994</td><td>0.006</td><td>OK</td></tr>
+<tr><td>RandomForest</td><td>1.000</td><td>0.998</td><td>0.002</td><td>OK</td></tr>
+</table>
+<hr>
+<h2>Tablo J - 5-Fold Cross Validation Sonuçları</h2>
+<table>
+<tr><th>Model</th><th>Ortalama Skor</th><th>Standart Sapma</th></tr>
+<tr><td>XGBoost</td><td>0.993</td><td>±0.004</td></tr>
+<tr><td>LightGBM</td><td>0.995</td><td>±0.003</td></tr>
+<tr><td>RandomForest</td><td>0.989</td><td>±0.006</td></tr>
+</table>
+<hr>
+<h2>Tablo K - XGBoost Sınıflandırma Raporu</h2>
+<table>
+<tr><th>Sınıf</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>Support</th></tr>
+<tr><td>orta</td><td>0.99</td><td>1.00</td><td>1.00</td><td>175</td></tr>
+<tr><td>uygun</td><td>1.00</td><td>1.00</td><td>1.00</td><td>40</td></tr>
+<tr><td>uygun_degil</td><td>1.00</td><td>1.00</td><td>1.00</td><td>273</td></tr>
+<tr><td>accuracy</td><td></td><td></td><td>1.00</td><td>488</td></tr>
+<tr><td>macro avg</td><td>1.00</td><td>1.00</td><td>1.00</td><td>488</td></tr>
+<tr><td>weighted avg</td><td>1.00</td><td>1.00</td><td>1.00</td><td>488</td></tr>
+</table>
+<hr>
+<h2>Tablo L - Feature Importance İlk 15 Özellik</h2>
+<table>
+<tr><th>Sıra</th><th>Özellik</th><th>Önem Skoru</th></tr>
+<tr><td>1</td><td>SFS</td><td>0.6492</td></tr>
+<tr><td>2</td><td>NFS</td><td>0.2741</td></tr>
+<tr><td>3</td><td>positive_ratio</td><td>0.0455</td></tr>
+<tr><td>4</td><td>negative_comment_ratio</td><td>0.0095</td></tr>
+<tr><td>5</td><td>avg_sentiment_score</td><td>0.0052</td></tr>
+<tr><td>6</td><td>category_yemek</td><td>0.0034</td></tr>
+<tr><td>7</td><td>neutral_comment_ratio</td><td>0.0029</td></tr>
+<tr><td>8</td><td>account_type_makro</td><td>0.0028</td></tr>
+<tr><td>9</td><td>posts_per_month</td><td>0.0019</td></tr>
+<tr><td>10</td><td>positive_comment_ratio</td><td>0.0015</td></tr>
+<tr><td>11</td><td>avg_comment_sentiment</td><td>0.0014</td></tr>
+<tr><td>12</td><td>engagement_rate</td><td>0.0014</td></tr>
+<tr><td>13</td><td>comment_count</td><td>0.0010</td></tr>
+<tr><td>14</td><td>account_type_mega</td><td>0.0003</td></tr>
+<tr><td>15</td><td>negative_ratio</td><td>0.0000</td></tr>
+</table>
+<hr>
+<h2>Tablo M - QA Test Kategorileri</h2>
+<table>
+<tr><th>Test Kategorisi</th><th>Test Edilen Boyut</th><th>Beklenen Sonuç</th><th>Gerçekleşen Sonuç</th><th>Durum</th></tr>
+<tr><td>Birim Testleri</td><td>Veri ön işleme, hard override, tier katsayısı ve skor normalizasyonu</td><td>Fonksiyonların tekil olarak doğru çalışması</td><td>Tüm kontroller başarıyla tamamlandı</td><td>Başarılı</td></tr>
+<tr><td>Entegrasyon Testleri</td><td>Flask API, MongoDB, model yükleme ve JSON sözleşmesi</td><td>Servislerin birlikte hatasız çalışması</td><td>API ve MongoDB entegrasyonu doğrulandı</td><td>Başarılı</td></tr>
+<tr><td>Algoritmik Doğrulama</td><td>Moda/teknoloji gibi farklı kampanya sorguları</td><td>Kategori sızıntısının olmaması</td><td>Semantic leakage gözlenmedi</td><td>Başarılı</td></tr>
+<tr><td>Sınır Durum Testleri</td><td>Boş, geçersiz ve aşırı uzun kampanya metinleri</td><td>Sistemin kontrollü hata vermesi veya güvenli yanıt üretmesi</td><td>400 hata yanıtları ve uzun metinlerde güvenli işlem doğrulandı</td><td>Başarılı</td></tr>
+<tr><td>Yük ve Latency Testleri</td><td>Ardışık ve eşzamanlı API istekleri</td><td>Sistemin istekleri zaman aşımı olmadan karşılaması</td><td>10/10 ve 50/50 eşzamanlı istek başarılı</td><td>Başarılı</td></tr>
+</table>
+<hr>
+<h2>Tablo N - Ayrıntılı QA Test Sonuçları</h2>
+<table>
+<tr><th>Test ID</th><th>Kategori</th><th>Senaryo</th><th>Beklenen Sonuç</th><th>Gerçekleşen Sonuç</th><th>Durum</th></tr>
+<tr><td>TS-01</td><td>Unit</td><td><code>clean_commercial_noise</code> ticari gürültü temizleme</td><td>Reklam/ticaret kelimeleri atılır</td><td>Gürültü temizlendi, semantik kelimeler kaldı</td><td>PASS</td></tr>
+<tr><td>TS-02</td><td>Unit</td><td>Hard override: <code>@ardasaatci</code></td><td>Kategori kesin olarak spor olur</td><td>spor, confidence=1.0</td><td>PASS</td></tr>
+<tr><td>TS-03</td><td>Unit</td><td>Tier katsayısı hesaplama</td><td>mega=+5.0, makro=+2.0, mikro=0.0</td><td>Beklenen bonuslar doğrulandı</td><td>PASS</td></tr>
+<tr><td>TS-04</td><td>Unit</td><td>Skor normalizasyonu</td><td>105 ham skor 100.0'a clip edilir</td><td>100.0</td><td>PASS</td></tr>
+<tr><td>TS-05</td><td>Integration</td><td>Flask API + model yükleme health check</td><td><code>/stats</code> 200 döner ve 244 profil yüklüdür</td><td>244 profil, 144 Instagram, 100 sentetik</td><td>PASS</td></tr>
+<tr><td>TS-06</td><td>Integration</td><td>MongoDB veri kaynağı entegrasyonu</td><td><code>/influencers</code> source=mongodb döner</td><td>MongoDB entegrasyonu doğrulandı</td><td>PASS</td></tr>
+<tr><td>TS-07</td><td>Integration</td><td>React-Flask JSON sözleşmesi</td><td>JSON içinde isim, skor, kategori, <code>ml_label</code>, <code>data_source</code> alanları vardır</td><td>Sözleşme doğrulandı</td><td>PASS</td></tr>
+<tr><td>TS-08</td><td>Algorithmic</td><td>Semantic search leakage kontrolü</td><td>Moda ve teknoloji sorgularında Top-5 kendi dikeyinde kalır</td><td>Leakage yok</td><td>PASS</td></tr>
+<tr><td>TS-09</td><td>Algorithmic</td><td>XGBoost metrik raporu üretimi</td><td>Accuracy, Precision, Recall, F1 metrikleri raporda bulunur</td><td>Rapor üretildi</td><td>PASS</td></tr>
+<tr><td>TS-10</td><td>Algorithmic</td><td>Sentetik vs gerçek veri ayrımı</td><td>Moda Top-5 içinde gerçek Instagram oranı yüksek olur</td><td>Instagram Top-5 oranı 1.00</td><td>PASS</td></tr>
+<tr><td>TS-11</td><td>Boundary</td><td>Boş kampanya metni</td><td>400 Bad Request döner</td><td>400 döndü</td><td>PASS</td></tr>
+<tr><td>TS-12</td><td>Boundary</td><td>Anlamsız/kısa kampanya metni</td><td>400 Bad Request döner</td><td>400 döndü</td><td>PASS</td></tr>
+<tr><td>TS-13</td><td>Boundary</td><td>Aşırı uzun kampanya metni</td><td>Sistem OOM olmadan 200 döner</td><td>200 OK, öneriler üretildi</td><td>PASS</td></tr>
+<tr><td>TS-14</td><td>Load</td><td>API latency / inference speed</td><td>Ardışık istekler başarılı olur</td><td>p50 yaklaşık 2.49 sn</td><td>PASS</td></tr>
+<tr><td>TS-15</td><td>Load</td><td>10 eşzamanlı istek</td><td>Success rate &gt;= %95</td><td>10/10 başarılı</td><td>PASS</td></tr>
+<tr><td>TS-16</td><td>Load</td><td>50 eşzamanlı istek</td><td>Success rate &gt;= %95</td><td>50/50 başarılı</td><td>PASS</td></tr>
+</table>
+<hr>
+<h2>Tablo O - Yük ve Latency Ölçümleri</h2>
+<table>
+<tr><th>Test</th><th>Ölçülen Değer</th><th>Sonuç</th></tr>
+<tr><td>Ardışık API isteği p50 latency</td><td>~2.49 saniye</td><td>Başarılı</td></tr>
+<tr><td>Aşırı uzun metin yanıt süresi</td><td>~3.04 saniye</td><td>Başarılı</td></tr>
+<tr><td>10 eşzamanlı istek</td><td>10/10 başarılı</td><td>Başarılı</td></tr>
+<tr><td>50 eşzamanlı istek</td><td>50/50 başarılı</td><td>Başarılı</td></tr>
+<tr><td>Moda Top-5 Instagram oranı</td><td>1.00</td><td>Başarılı</td></tr>
+<tr><td>Toplam MongoDB kayıt sayısı</td><td>244</td><td>Başarılı</td></tr>
+</table>
+<hr>
+<h2>Tablo P - Sistem Bileşenleri ve Kullanılan Teknolojiler</h2>
+<table>
+<tr><th>Bileşen</th><th>Araç / Teknoloji</th><th>Kullanım Amacı</th></tr>
+<tr><td>Programlama dili</td><td>Python, JavaScript</td><td>Veri analizi, backend ve arayüz geliştirme</td></tr>
+<tr><td>Backend</td><td>Flask REST API</td><td>Öneri endpointleri ve model servisi</td></tr>
+<tr><td>Frontend</td><td>React</td><td>Kullanıcı arayüzü, öneri kartları ve XAI rozetleri</td></tr>
+<tr><td>Veritabanı</td><td>MongoDB</td><td>Fenomen profil verilerinin saklanması</td></tr>
+<tr><td>NLP - Semantik Benzerlik</td><td>Sentence-Transformers / SBERT</td><td>Marka-fenomen anlamsal uyum skoru</td></tr>
+<tr><td>NLP - Anahtar Kelime Desteği</td><td>TF-IDF / KFS</td><td>Açıklanabilir anahtar ifade uyumu</td></tr>
+<tr><td>Makine öğrenmesi</td><td>XGBoost, LightGBM, RandomForest, Logistic Regression</td><td>Uygunluk sınıflandırması ve model karşılaştırması</td></tr>
+<tr><td>Veri işleme</td><td>Pandas, NumPy</td><td>Veri temizleme, normalizasyon ve öznitelik çıkarımı</td></tr>
+<tr><td>Model/veri yedekleme</td><td><code>.pkl</code> checkpoint dosyaları</td><td>MongoDB kapalıyken fallback çalışma</td></tr>
+<tr><td>Dağıtım</td><td>Docker / Docker Compose</td><td>Konteynerleştirme ve taşınabilir çalışma</td></tr>
+</table>
+<hr>
+<h2>Tablo Q - Arayüzde Gösterilen Açıklanabilirlik Alanları</h2>
+<table>
+<tr><th>Arayüz Alanı</th><th>Kaynak / Model</th><th>Kullanıcıya Sağladığı Açıklama</th></tr>
+<tr><td>Final Score</td><td>Sıralama motoru</td><td>Fenomenin genel öneri sırasındaki gücünü gösterir</td></tr>
+<tr><td>AI Uygunluk Analizi Durumu</td><td>XGBoost <code>ml_label</code></td><td>Fenomenin kampanya için uygun, orta veya uygun değil durumunu açıklar</td></tr>
+<tr><td>Semantik Uyum</td><td>SBERT / SFS</td><td>Marka metni ile fenomen içeriği arasındaki anlam yakınlığını gösterir</td></tr>
+<tr><td>Kampanya Uyumu</td><td>CFS / kampanya profili</td><td>Fenomenin hedef kampanya profiline ne kadar uyduğunu gösterir</td></tr>
+<tr><td>Veri Kaynağı</td><td><code>data_source</code></td><td>Profilin gerçek Instagram mı sentetik mi olduğunu gösterir</td></tr>
+<tr><td>Risk göstergesi</td><td><code>fake_risk</code></td><td>Marka güvenliği açısından potansiyel güvenilirlik riskini açıklar</td></tr>
+</table>
+<hr>
+<h2>Tablo R - Tezde Kullanılabilecek Kaynak Eşleştirme Tablosu</h2>
+<table>
+<tr><th>Teknik Kavram</th><th>Tezde Kullanılacağı Yer</th><th>Önerilen Kaynak</th></tr>
+<tr><td>Sentence-BERT</td><td>3.4 Öznitelik Çıkarımı ve Doğal Dil İşleme</td><td>Reimers &amp; Gurevych, 2019</td></tr>
+<tr><td>TF-IDF</td><td>3.4 Öznitelik Çıkarımı ve Doğal Dil İşleme</td><td>Salton &amp; Buckley, 1988</td></tr>
+<tr><td>Cosine Similarity</td><td>3.4 Öznitelik Çıkarımı ve Doğal Dil İşleme</td><td>Manning, Raghavan &amp; Schütze, 2008</td></tr>
+<tr><td>XGBoost</td><td>3.5 Makine Öğrenmesi ve Karar Destek Modelleri</td><td>Chen &amp; Guestrin, 2016</td></tr>
+<tr><td>LightGBM</td><td>3.5 Makine Öğrenmesi ve Karar Destek Modelleri</td><td>Ke et al., 2017</td></tr>
+<tr><td>QA / yazılım testleri</td><td>3.7 Model Başarımının Değerlendirilmesi</td><td>Proje içi test raporu</td></tr>
+</table>
+</main></body></html>
