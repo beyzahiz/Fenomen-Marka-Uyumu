@@ -8,10 +8,10 @@
 # ÇALIŞMA : python pipeline/analiz_pipeline.py
 #           (TezBitirme/ kök dizininden veya pipeline/ içinden çalışır)
 #
-# GİRDİLER (data/ dizini):
-#   influencer_profiles.csv   — 244 fenomen profili
-#   influencer_posts.csv      — 11 292 gönderi
-#   influencer_comments.csv   — 11 591 yorum
+# YENİ
+#   influencer_profiles.csv   — 135 fenomen profili (Meta Content Library)
+#   influencer_posts.csv      — 13 344 gönderi
+#   influencer_comments.csv   — yorum verisi mevcut değil (sentiment caption üzerinden yapılıyor)
 #
 # ÇIKTILAR (pipeline/ dizini):
 #   influencer_summary_checkpoint.pkl  — hesaplanmış tüm skorlar

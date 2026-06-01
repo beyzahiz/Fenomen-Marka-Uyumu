@@ -3,18 +3,15 @@
 build_cf_matrix.py
 ==================
 Influencer × Influencer kampanya benzerlik matrisini olusturur (item-based CF).
-
 Mantik:
-  Her fenomenin 10 kampanya kategorisiyle olan SBERT benzerlik skorlari
-  (sim_beauty_fashion, sim_lifestyle, ...) bir "kampanya profil vektoru" olusturur.
+  Her fenomenin 6 Türkçe kampanya kategorisiyle olan SBERT benzerlik skorlari
+  (sim_spor_kampanyasi, sim_moda_kampanyasi, ...) bir "kampanya profil vektoru" olusturur.
   Bu vektorler arasindaki cosine similarity, iki fenomenin ne kadar benzer
   kampanya profiline sahip oldugunu gosterir — item-based collaborative filtering.
-
 Kullanim:
   python pipeline/build_cf_matrix.py
-
 Cikti:
-  pipeline/cf_similarity_matrix.pkl  —  DataFrame (244x244), index=influencer_name
+  pipeline/cf_similarity_matrix.pkl  —  DataFrame (135x135), index=influencer_name
 """
 
 import pickle
