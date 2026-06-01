@@ -172,7 +172,7 @@ function ScoreItem({ label, value, cls }) {
 }
 
 /* ── stat cell ───────────────────────────────────────────── */
-function StatCell({ Icon, label, value, iconBg, iconColor, valueColor }) {
+function StatCell({ Icon, label, value, subValue, iconBg, iconColor, valueColor }) {
   return (
     <div className="stat-cell">
       <div className="sc-icon-box" style={{background:iconBg, color:iconColor}}>
@@ -180,6 +180,7 @@ function StatCell({ Icon, label, value, iconBg, iconColor, valueColor }) {
       </div>
       <span className="sc-v" style={valueColor?{color:valueColor}:undefined}>{value}</span>
       <span className="sc-lbl">{label}</span>
+      {subValue && <span className="sc-lbl" style={{fontSize:'.55rem',opacity:.75}}>{subValue}</span>}
     </div>
   )
 }
@@ -190,7 +191,7 @@ export default function InfluencerCard({ rank, data }) {
     influencer_name, category, account_type,
     NFS, NFS_norm, sfs, cfs, campaign_bas,
     raw_final_score, ai_adjustment, final_score,
-    positive_ratio, fake_followers_risk,
+    positive_ratio, avg_signed_sentiment, fake_followers_risk,
     avg_views, engagement_rate,
     ml_label, data_source,
   } = data
@@ -291,6 +292,7 @@ export default function InfluencerCard({ rank, data }) {
             Icon={TrendIcon}
             label="Pozitif"
             value={positive_ratio!=null?`%${Number(positive_ratio).toFixed(0)}`:'—'}
+            subValue={avg_signed_sentiment!=null?`Duygu: ${Number(avg_signed_sentiment).toFixed(2)}`:''}
             iconBg="rgba(16,185,129,0.1)"
             iconColor="#10b981"
             valueColor="#10b981"
