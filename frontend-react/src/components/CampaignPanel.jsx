@@ -8,17 +8,6 @@ const ICONS = {
   yemek_kampanyasi    : '🍽️',
   annebebek_kampanyasi: '👶',
   oyun_kampanyasi     : '🎮',
-  // İngilizce kampanya adları (pipeline uyumluluğu)
-  beauty_fashion  : '💄',
-  lifestyle       : '🌿',
-  fitness_health  : '💪',
-  food_gastronomy : '🍽️',
-  technology      : '💻',
-  gaming          : '🎮',
-  travel          : '✈️',
-  finance_business: '📈',
-  entertainment   : '🎬',
-  sports          : '⚽',
 }
 
 const LABELS = {
@@ -29,17 +18,6 @@ const LABELS = {
   yemek_kampanyasi    : 'Yemek',
   annebebek_kampanyasi: 'Anne & Bebek',
   oyun_kampanyasi     : 'Oyun',
-  // İngilizce kampanya adları (pipeline uyumluluğu)
-  beauty_fashion  : 'Beauty & Fashion',
-  lifestyle       : 'Lifestyle',
-  fitness_health  : 'Fitness & Health',
-  food_gastronomy : 'Food & Gastronomy',
-  technology      : 'Technology',
-  gaming          : 'Gaming',
-  travel          : 'Travel',
-  finance_business: 'Finance & Business',
-  entertainment   : 'Entertainment',
-  sports          : 'Sports',
 }
 
 const COLORS = ['#7c6ef9', '#a78bfa', '#38bdf8']

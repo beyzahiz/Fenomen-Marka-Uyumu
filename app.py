@@ -51,7 +51,7 @@ except ImportError:
     def is_mongo_available(): return False
 
 # ── Uygulama ayarları ────────────────────────────────────────────────────────
-app = Flask(__name__, static_folder="frontend/static", template_folder="frontend")
+app = Flask(__name__, static_folder="frontend-react/dist", template_folder="frontend-react/dist")
 CORS(app)
 
 BASE_DIR     = Path(__file__).parent
@@ -152,12 +152,12 @@ CAMPAIGN_CATEGORY_BONUS: dict[str, dict[str, float]] = {
 }
 
 CAMPAIGN_CATEGORY_ALLOWLIST: dict[str, list[str]] = {
-    "spor_kampanyasi":      ["spor", "saglik", "lifestyle"],
-    "moda_kampanyasi":      ["moda", "lifestyle", "saglik"],
-    "teknoloji_kampanyasi": ["teknoloji", "oyun", "egitim"],
-    "yemek_kampanyasi":     ["yemek", "lifestyle", "saglik"],
-    "annebebek_kampanyasi": ["anne-bebek", "saglik", "lifestyle"],
-    "oyun_kampanyasi":      ["oyun", "teknoloji"],
+    "spor_kampanyasi":      ["spor", "saglik", "lifestyle", "diğer"],
+    "moda_kampanyasi":      ["moda", "lifestyle", "saglik", "diğer"],
+    "teknoloji_kampanyasi": ["teknoloji", "oyun", "egitim", "diğer"],
+    "yemek_kampanyasi":     ["yemek", "lifestyle", "saglik", "diğer"],
+    "annebebek_kampanyasi": ["anne-bebek", "saglik", "lifestyle", "diğer"],
+    "oyun_kampanyasi":      ["oyun", "teknoloji", "diğer"],
 }
 
 # ── Veri yükleme ─────────────────────────────────────────────────────────────
@@ -543,11 +543,11 @@ def get_top_n(brand_text: str, top_n: int = 5) -> dict:
     df_filtered["ml_label"] = df_filtered.apply(
         lambda r: predict_ml_label(r, closest_camp), axis=1
     )
-    df_filtered["ai_adjustment"] = df_filtered["ml_label"].apply(ml_label_adjustment)
     df_filtered["raw_final_score"] = df_filtered["final_score"].round(2)
+    df_filtered["ai_adjustment"]   = df_filtered["ml_label"].apply(ml_label_adjustment)
     df_filtered["final_score"] = (
-        df_filtered["final_score"].astype(float) + df_filtered["ai_adjustment"].astype(float)
-    ).clip(0, 100).round(2)
+    df_filtered["final_score"].astype(float) + df_filtered["ai_adjustment"].astype(float)
+).clip(0, 100).round(2)
 
     # Instagram bonusu
     df_filtered["source_bonus"] = np.where(df_filtered["data_source"] == "instagram", 3.0, 0.0)
