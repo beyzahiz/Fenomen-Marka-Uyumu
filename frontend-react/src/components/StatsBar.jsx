@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 const PILLS = [
   { icon: '👤', valKey: 'total_influencers', lbl: 'Fenomen',    fmt: v => v },
   { icon: '📊', valKey: 'avg_NFS',           lbl: 'Ort. NFS',   fmt: v => v?.toFixed(1) },
   { icon: '💬', valKey: 'avg_engagement',    lbl: 'Ort. Etkil.', fmt: v => v ? `%${v}` : '—' },
   { icon: '🤖', valKey: '_accuracy',         lbl: 'XGBoost',    fmt: () => '%83.2' },
-  { icon: '🔗', valKey: '_cf',               lbl: 'CF Matrisi', fmt: () => '244×244' },
+  { icon: '🔗', valKey: 'total_influencers',  lbl: 'CF Matrisi', fmt: v => v ? `${v}×${v}` : '—' },
 ]
 
 export default function StatsBar() {
   const [data, setData] = useState(null)
 
   useEffect(() => {
-    fetch(`${API_BASE}/stats`)
+    fetch(`${API_BASE}/api/stats`)
       .then(r => r.json())
       .then(d => setData(d))
       .catch(() => {})

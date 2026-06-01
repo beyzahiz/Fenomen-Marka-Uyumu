@@ -24,6 +24,10 @@ docker_build.log
 .DS_Store
 Thumbs.db
 
+# Node
+frontend-react/node_modules/
+node_modules/
+
 # Geçici
 *.tmp
 *.zip

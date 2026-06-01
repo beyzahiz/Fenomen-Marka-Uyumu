@@ -315,8 +315,8 @@ print(f"OK  TF-IDF: {_tfidf_matrix.shape[0]} x {_tfidf_matrix.shape[1]}")
 # CF matrisi (opsiyonel)
 _cf_matrix = None
 _cf_candidates = [
-    PIPELINE_DIR / "cf_similarity_matrix_safe.pkl",
-    PIPELINE_DIR / "cf_similarity_matrix.pkl",
+    PIPELINE_DIR / "cf_similarity_matrix.pkl",        # önce güncel
+    PIPELINE_DIR / "cf_similarity_matrix_safe.pkl",  # yedek
 ]
 _cf_path = next((p for p in _cf_candidates if p.exists()), _cf_candidates[-1])
 try:
@@ -376,14 +376,6 @@ def compute_brand_campaign_weights(
     weights = _softmax(raw_scores * 7)
     return {name: float(w) for name, w in zip(CAMPAIGN_NAMES, weights)}
 
-
-def calculate_cfs(brand_weights: dict[str, float], row: pd.Series) -> float:
-    """CFS = Σ brand_weight[k] * sim_kampanya[k] * 100"""
-    cfs = sum(
-        brand_weights.get(name, 0.0) * float(row.get(f"sim_{name}", 0.0))
-        for name in CAMPAIGN_NAMES
-    ) * 100.0
-    return round(float(np.clip(cfs, 0.0, 100.0)), 2)
 
 
 def calculate_final_score(
@@ -470,20 +462,17 @@ def get_top_n(brand_text: str, top_n: int = 5) -> dict:
     weight_vec = np.array([brand_weights.get(name, 0.0) for name in CAMPAIGN_NAMES], dtype=float)
     df["cfs"]  = (sim_matrix @ weight_vec * 100.0).clip(0, 100).round(2)
 
-    # NFS log-normalizasyonu — dağılım çarpık (maks ~91, ort ~3), log ile aralık daraltılır
-    _nfs_max = float(df["NFS"].max())
-    if _nfs_max > 0:
-        df["_nfs_log"] = (np.log1p(df["NFS"]) / np.log1p(_nfs_max) * 100).clip(0, 100).round(2)
-    else:
-        df["_nfs_log"] = df["NFS"]
+    # NFS percentile normalizasyonu — log dönüşüm yetersiz (maks hâlâ 100, ort 4.2)
+    # rank(pct=True): maks=100. percentile=100, ort=50. percentile → katkı farkı 10 puana düşer
+    df["_nfs_log"] = (df["NFS"].rank(pct=True) * 100).clip(0, 100).round(2)
 
-    # Sentiment z-score — %79'u 0.58-0.99 bandında sıkışmış, z-score ile ayırt edici hale getirilir
+    # Sentiment z-score — clip(-2,2)/2: aralığı geniş tutar, taban kaybını azaltır
     # Çıktı: -1 ile +1 arası → mevcut ((x+1)/2)*100 formülüyle 0-100'e map edilir
     _s_mean = float(df["avg_signed_sentiment"].mean())
     _s_std  = float(df["avg_signed_sentiment"].std())
     if _s_std > 1e-6:
         df["_sent_adj"] = (
-            ((df["avg_signed_sentiment"] - _s_mean) / _s_std).clip(-3, 3) / 3
+            ((df["avg_signed_sentiment"] - _s_mean) / _s_std).clip(-2, 2) / 2
         ).round(4)
     else:
         df["_sent_adj"] = df["avg_signed_sentiment"].fillna(0.0)
@@ -530,7 +519,11 @@ def get_top_n(brand_text: str, top_n: int = 5) -> dict:
 
     # SFS düşük olanları cezalandır
     df["relevance_ok"] = df["category_match"] & df["semantic_match"]
-    df["niche_penalty"] = np.where(~df["relevance_ok"], 20.0, 0.0)
+    # "diğer" için hafif ceza (10p), net yanlış kategori için tam ceza (20p)
+    df["niche_penalty"] = np.where(
+        df["category"] == "diğer", 10.0,
+        np.where(~df["relevance_ok"], 20.0, 0.0)
+    )
     df["final_score"] = (df["final_score"] - df["niche_penalty"]).clip(0, 100).round(2)
 
     # 6) Filtrele
@@ -571,10 +564,13 @@ def get_top_n(brand_text: str, top_n: int = 5) -> dict:
 
     top3_camps = sorted(brand_weights.items(), key=lambda x: x[1], reverse=True)[:3]
 
+    # NFS_norm: scoring'de kullanılan percentile değeri frontend'e de gönderiliyor
+    top_df["NFS_norm"] = top_df["_nfs_log"]
+
     # Sonuç sütunları
     base_cols = [
         "influencer_name", "category", "account_type",
-        "NFS", "sfs", "cfs", "bas", "final_score",
+        "NFS", "NFS_norm", "sfs", "cfs", "bas", "final_score",
         "raw_final_score", "ai_adjustment", "ml_label",
         "positive_ratio", "avg_signed_sentiment",
         "fake_followers_risk", "risk_category",

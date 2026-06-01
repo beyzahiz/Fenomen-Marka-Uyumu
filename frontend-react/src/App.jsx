@@ -6,7 +6,7 @@ import SkeletonCard   from './components/SkeletonCard'
 import StatsBar       from './components/StatsBar'
 import './App.css'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 const SORTS = [
   { key:'final_score',  label:'En uygun' },
@@ -44,7 +44,7 @@ export default function App() {
     if (!brandText.trim()) { setError('Marka metni zorunludur.'); return }
     setLoading(true); setError(''); setResults([]); setMeta(null)
     try {
-      const { data } = await axios.post(`${API_BASE}/recommend`, {
+      const { data } = await axios.post(`${API_BASE}/api/recommend`, {
         brand_text: brandText,
         top_n: Math.max(1, Math.min(50, topN)),
       })

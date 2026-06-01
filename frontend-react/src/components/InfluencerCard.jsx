@@ -188,12 +188,16 @@ function StatCell({ Icon, label, value, iconBg, iconColor, valueColor }) {
 export default function InfluencerCard({ rank, data }) {
   const {
     influencer_name, category, account_type,
-    NFS, sfs, cfs, campaign_bas,
+    NFS, NFS_norm, sfs, cfs, campaign_bas,
     raw_final_score, ai_adjustment, final_score,
     positive_ratio, fake_followers_risk,
     avg_views, engagement_rate,
     ml_label, data_source,
   } = data
+
+  // NFS_norm: sistemin sıralamada kullandığı percentile değeri (0-100)
+  // NFS:      ham değer (referans için)
+  const displayNFS = NFS_norm ?? NFS
 
   const risk         = fake_followers_risk ?? 0
   const hasAiAdj     = ai_adjustment != null && Number(ai_adjustment) !== 0
@@ -261,7 +265,7 @@ export default function InfluencerCard({ rank, data }) {
         {/* score grid */}
         <div className="score-grid">
           <ScoreItem label="SFS" value={sfs}          cls="f-sfs"/>
-          <ScoreItem label="NFS" value={NFS}          cls="f-nfs"/>
+          <ScoreItem label="NFS" value={displayNFS}    cls="f-nfs"/>
           <ScoreItem label="CFS" value={cfs}          cls="f-cfs"/>
           <ScoreItem label="BAS" value={campaign_bas} cls="f-bas"/>
         </div>

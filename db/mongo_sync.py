@@ -20,8 +20,8 @@ import pandas as pd
 
 PIPELINE_DIR = Path(__file__).parent.parent / "pipeline"
 CKPT_CANDIDATES = [
-    PIPELINE_DIR / "influencer_summary_checkpoint_safe.pkl",
-    PIPELINE_DIR / "influencer_summary_checkpoint.pkl",
+    PIPELINE_DIR / "influencer_summary_checkpoint.pkl",       # önce güncel
+    PIPELINE_DIR / "influencer_summary_checkpoint_safe.pkl",  # yedek
 ]
 CKPT_PATH = next((p for p in CKPT_CANDIDATES if p.exists()), CKPT_CANDIDATES[-1])
 
