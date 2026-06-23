@@ -1,383 +1,353 @@
-# Yapay Zekâ Destekli Fenomen–Marka Eşleştirme Sistemi
+# Yapay Zekâ Destekli Fenomen–Marka Eşleştirme Uygulaması
 
 **TÜBİTAK 2209-A Üniversite Öğrencileri Araştırma Projeleri Destekleme Programı**
 
-Bir markanın metin açıklamasını alıp, 100 fenomenlik veri tabanından en uygun influencer'ları semantik benzerlik, sayısal performans, işbirlikçi filtreleme, duygu analizi ve sahte takipçi riski birleştirerek sıralayan uçtan uca bir yapay zekâ sistemi.
+**İstanbul Sağlık ve Teknoloji Üniversitesi — Mühendislik ve Doğa Bilimleri Fakültesi — Yazılım Mühendisliği Bölümü Lisans Bitirme Projesi**
+
+> Bir markanın serbest metin olarak girdiği kampanya açıklamasını alıp; **anlamsal benzerlik, sayısal performans, kampanya/kitle uyumu, anahtar kelime eşleşmesi, duygu analizi ve sahte takipçi riskini** tek bir hibrit skorlama mimarisinde birleştirerek 135 kişilik doğrulanmış Instagram fenomeni veri tabanından markaya en uygun içerik üreticilerini sıralayan, açıklanabilir (XAI) bir karar destek sistemi.
+
+**Proje Ekibi:** Beyza Hız ·  Zeynep Ece Kutlu · Zeynep Yıldırım<br>
+**Proje Danışmanı:** Dr. Öğr. Üyesi Mehmet Kurt
 
 ---
 
 ## İçindekiler
 
-1. [Sistem Mimarisi ve Dosya Yapısı](#1-sistem-mimarisi-ve-dosya-yapısı)
-2. [Skor Formülleri ve Algoritmalar](#2-skor-formülleri-ve-algoritmalar)
-3. [Makine Öğrenmesi Pipeline](#3-makine-öğrenmesi-pipeline)
-4. [Model Doğrulama Sonuçları](#4-model-doğrulama-sonuçları)
-5. [API Endpointleri](#5-api-endpointleri)
-6. [Frontend Mimarisi](#6-frontend-mimarisi)
-7. [Kurulum ve Çalıştırma](#7-kurulum-ve-çalıştırma)
-8. [Docker ile Dağıtım](#8-docker-ile-dağıtım)
-9. [CSV Dışa Aktarma](#9-csv-dışa-aktarma)
-10. [Karşılaşılan Hatalar ve Çözümler](#10-karşılaşılan-hatalar-ve-çözümler)
+1. [Proje Özeti](#1-proje-özeti)
+2. [Problem Tanımı ve Motivasyon](#2-problem-tanımı-ve-motivasyon)
+3. [Sistem Mimarisi](#3-sistem-mimarisi)
+4. [Veri Seti](#4-veri-seti)
+5. [Skorlama Bileşenleri ve Formüller](#5-skorlama-bileşenleri-ve-formüller)
+6. [Sahte Takipçi Risk Skoru](#6-sahte-takipçi-risk-skoru)
+7. [Makine Öğrenmesi Pipeline'ı](#7-makine-öğrenmesi-pipelineı)
+8. [Model Performans Sonuçları](#8-model-performans-sonuçları)
+9. [Benzer Fenomen Sistemi (CF + K-Means)](#9-benzer-fenomen-sistemi-cf--k-means)
+10. [Backend ve API Katmanı](#10-backend-ve-api-katmanı)
+11. [Frontend Mimarisi](#11-frontend-mimarisi)
+12. [Proje Dosya Yapısı](#12-proje-dosya-yapısı)
+13. [Docker ile Dağıtım](#14-docker-ile-dağıtım)
+14. [Test Süreci](#15-test-süreci)
+15. [Veri Dışa Aktarma](#16-veri-dışa-aktarma)
+16. [Kullanılan Teknolojiler](#17-kullanılan-teknolojiler)
+17. [Sınırlılıklar](#18-sınırlılıklar)
+18. [Akademik ve Etik Bilgilendirme](#20-akademik-ve-etik-bilgilendirme)
 
 ---
 
-## 1. Sistem Mimarisi ve Dosya Yapısı
+## 1. Proje Özeti
 
-```
-TezBitirme/
-│
-├── app.py                          # Flask REST API — tüm endpoint'ler burada
-├── analiz_pipeline.py              # Tek seferlik analiz pipeline'ı (pkl üretir)
-├── influencer_features.py          # Özellik mühendisliği yardımcı fonksiyonları
-├── _validate_models.py             # Bağımsız model doğrulama scripti
-│
-├── frontend/
-│   ├── index.html                  # Ana HTML sayfası
-│   └── static/
-│       ├── app.js                  # Vanilla JavaScript — tüm UI mantığı
-│       └── style.css               # CSS Design System (dark theme)
-│
-├── *.pkl                           # Eğitilmiş modeller ve önbellek dosyaları
-│   ├── best_model_xgb.pkl          # XGBoost modeli
-│   ├── label_encoder.pkl           # Etiket kodlayıcı
-│   ├── feature_columns.pkl         # Model özellik sütunları
-│   ├── kmeans_model.pkl            # K-Means kümeleme modeli
-│   └── influencer_summary_checkpoint.pkl  # Fenomen özet verisi
-│
-├── model_reports/                  # Model doğrulama çıktıları
-│   ├── confusion_matrices.png      # Karmaşıklık matrisleri
-│   ├── feature_importance.png      # Özellik önem sıralaması
-│   ├── model_comparison.png        # Model karşılaştırma grafiği
-│   └── model_validation_report.txt # Detaylı metin raporu
-│
-├── Dockerfile                      # Docker imaj tanımı
-├── docker-compose.yml              # Docker Compose servisleri
-├── .dockerignore                   # Docker build hariç tutulanlar
-├── requirements.txt                # Geliştirme bağımlılıkları
-├── requirements-prod.txt           # Üretim bağımlılıkları (sürüm sabitlenmiş)
-└── start.bat                       # Windows kolay başlatma scripti
-```
+Dijital pazarlama sektöründe marka–fenomen eşleştirmesi günümüzde büyük ölçüde takipçi sayısı, beğeni sayısı gibi yüzeysel metriklere ve öznel deneyime dayanmaktadır. Bu proje, aşağıdaki temel araştırma sorusuna yanıt aramak amacıyla geliştirilmiştir:
 
-### Bileşenler Arası Veri Akışı
+> **"Bir fenomenin içerik dili, etkileşim kalitesi ve hedef kitle özellikleri, bir markanın kampanya başarısını öngörmede ne derece etkili olabilir?"**
 
-```
-analiz_pipeline.py
-    └─► *.pkl dosyaları (modeller + fenomen verileri)
-            └─► app.py yükler (başlangıçta bir kez)
-                    └─► /recommend endpoint'i
-                            ├─► SBERT embedding (marka metni)
-                            ├─► SFS hesaplama (cosine similarity)
-                            ├─► CFS hesaplama (softmax agirliklar)
-                            ├─► NFS (pkl'den önceden hesaplı)
-                            ├─► XGBoost tahmin (ml_label)
-                            └─► JSON yanit → frontend/app.js → UI
-```
+Bu doğrultuda, Meta Geliştirici Platformu üzerinden resmi başvuru ile elde edilen **135 doğrulanmış Instagram fenomenine** ait kamuya açık veriler (profil, gönderi metni, etkileşim, hashtag) toplanmış; bu veriler **doğal dil işleme (NLP)** ve **makine öğrenmesi** teknikleriyle işlenerek uçtan uca çalışan bir karar destek sistemi geliştirilmiştir. Sistem, kullanıcının girdiği marka/kampanya metnini en uygun kampanya kategorisine eşler, fenomenleri çok bileşenli bir hibrit skorla sıralar ve her öneri için **"neden önerildi?"** açıklamasını React tabanlı arayüz üzerinden şeffaf biçimde sunar.
 
 ---
 
-## 2. Skor Formülleri ve Algoritmalar
+## 2. Problem Tanımı ve Motivasyon
 
-Sistem beş bileşeni birleştirerek iki farklı skor üretir.
+- Küresel influencer pazarlama pazarı 2024 sonunda **24 milyar dolar**a, 2025 sonunda tahminen **32,5 milyar dolar**a ulaşmıştır; Türkiye'de bu hacim 2024'te **6,75 milyar TL**'dir.
+- Markalar reklam bütçelerinin **%40'ından fazlasını** sosyal medya fenomenleriyle yapılan kampanyalara ayırmaktadır.
+- Literatür incelemesi, mevcut fenomen seçim araçlarının büyük ölçüde **anahtar kelime arama + takipçi sayısı + genel etkileşim oranı** gibi yüzeysel ve içerik tabanlı filtrelemeyle sınırlı kaldığını; geçmiş kampanya/işbirlikçi verileri, anlamsal uyum ve sahte etkileşim riskini büyük ölçüde göz ardı ettiğini göstermektedir.
+- Yanlış fenomen seçimi; itibar kaybı, düşük dönüşüm oranı ve düşük Yatırım Getirisi (ROI) gibi somut zararlara yol açmaktadır.
 
-### 2.1 NFS — Sayısal Performans Skoru (Numerical Fit Score)
-
-Fenomenin ham sayısal metriklerini 0–100 aralığına normalize eden skor:
-
-```
-NFS = (engagement_rate × 0.50 + FGR × 0.30 + posts_per_month × 0.20) × 100
-```
-
-- **engagement_rate**: Gönderi başına ortalama etkileşim oranı
-- **FGR** (Follower Growth Rate): Takipçi büyüme hızı
-- **posts_per_month**: Aylık gönderi sayısı (normalize edilmiş)
-
-> NFS, `analiz_pipeline.py` içinde hesaplanır ve checkpoint'e kaydedilir. İstek anında yeniden hesaplanmaz.
+Bu çalışma, **Kaynak Güvenilirliği Modeli** (Ohanian, 1990) ve **Anlam Transferi Modeli** (McCracken, 1989) gibi pazarlama iletişimi kuramlarını teknik bir karar destek sistemine dönüştürerek; içerik tabanlı filtreleme ile işbirlikçi filtrelemeyi (collaborative filtering) birleştiren hibrit bir yaklaşım önermektedir.
 
 ---
 
-### 2.2 SFS — Semantik Uyum Skoru (Semantic Fit Score)
-
-Marka metni ile fenomenin biyografi/içerik metni arasındaki SBERT cosine benzerliği:
+## 3. Sistem Mimarisi
 
 ```
-SFS = cosine_similarity(embed(marka_metni), embed(fenomen_metni)) × 100
+                ┌─────────────────────────────┐
+                │   React + Vite Frontend      │
+                │ (Kampanya formu, skor        │
+                │  kartları, grafikler, AI     │
+                │  gerekçelendirme paneli)     │
+                └───────────────┬─────────────┘
+                                │ Axios (JSON / REST)
+                                ▼
+                ┌─────────────────────────────┐
+                │     Flask REST API (app.py)  │
+                │  /recommend  /stats          │
+                │  /campaigns  /influencers    │
+                │  /influencers/<name>/similar │
+                └───────────────┬─────────────┘
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+┌───────────────┐     ┌───────────────────┐    ┌──────────────────┐
+│  NLP Katmanı   │     │  Skorlama Motoru   │    │  ML Karar Modeli  │
+│ SBERT (SFS)    │     │ NFS · CFS · KFS    │    │ XGBoost (ml_label)│
+│ TF-IDF (KFS)   │     │ BAS · Final Score  │    │ uygun/orta/       │
+│ Turkish BERT   │     │ Risk Penalty       │    │ uygun_degil       │
+│ (Duygu Analizi)│     │                     │    │                   │
+└───────────────┘     └───────────────────┘    └──────────────────┘
+        │                       │                       │
+        └───────────────────────┼───────────────────────┘
+                                ▼
+                ┌─────────────────────────────┐
+                │  MongoDB  (birincil depo)     │
+                │  + .pkl Checkpoint (fallback) │
+                │  best_model_xgb.pkl           │
+                │  cf_similarity_matrix.pkl     │
+                │  influencer_summary_*.pkl     │
+                └─────────────────────────────┘
 ```
 
-**Model:** `paraphrase-multilingual-MiniLM-L12-v2` (Türkçe destekli, 512 boyut)
-
-- Fenomen embedding'leri `analiz_pipeline.py`'da önceden hesaplanır ve kaydedilir
-- Marka embedding'i her istek anında hesaplanır (yaklasik 0.1–0.3 sn)
-- Cosine similarity formülü: `(A·B) / (||A|| × ||B||)`
+**Akış mantığı:** `analiz_pipeline.py` veri setini bir kez işler, SBERT/TF-IDF/duygu özniteliklerini çıkarır, XGBoost modelini eğitir, K-Means kümelemesini ve 135×135 işbirlikçi benzerlik matrisini hesaplar ve tüm çıktıları `.pkl` dosyalarına ile MongoDB'ye yazar. `app.py` başlangıçta bu çıktıları belleğe yükler; her `/recommend` isteğinde yalnızca marka metninin embedding'i ve skor birleştirmesi anlık olarak hesaplanır (~0.1–0.3 sn). MongoDB bağlantısı kesilirse sistem otomatik olarak `.pkl` checkpoint'lerinden çalışmaya devam eder.
 
 ---
 
-### 2.3 CFS — İşbirlikçi Uyum Skoru (Collaborative Fit Score)
+## 4. Veri Seti
 
-6 kampanya şablonunu kullanan bir tür işbirlikçi filtreleme mekanizması:
+| Özellik | Değer |
+|---|---|
+| Veri kaynağı | Meta Geliştirici Platformu (resmi API başvurusu ile) |
+| Platform | Instagram |
+| Fenomen sayısı | **135** doğrulanmış hesap |
+| Kampanya kategorisi sayısı | **6** (spor, moda, teknoloji, yemek, anne-bebek, oyun) |
+| Model satırı (fenomen × kampanya) | **810** |
+| Eğitim / Test ayrımı | 648 / 162 (%80 / %20) |
+| Fenomen başına örneklenen gönderi | En fazla 30 gönderi metni |
+| Toplanan alanlar | Profil bilgisi, biyografi, hashtag, gönderi metni, beğeni/yorum sayısı, takipçi sayısı/geçmişi |
 
-**Adım 1 — Kampanya Embedding'leri (başlangıçta bir kez hesaplanır):**
-```python
-CAMPAIGN_TEXTS = {
-    "spor_kampanyasi"     : "fitness spor antrenman...",
-    "moda_kampanyasi"     : "moda trend stil...",
-    "teknoloji_kampanyasi": "teknoloji yazilim...",
-    "yemek_kampanyasi"    : "yemek tarif lezzet...",
-    "annebebek_kampanyasi": "anne bebek cocuk...",
-    "oyun_kampanyasi"     : "oyun e-spor gaming...",
-}
-```
-
-**Adım 2 — Marka–Kampanya Ağırlıkları (softmax normalize):**
-```
-raw[k]    = cosine_sim(marka_embedding, kampanya_embedding[k])
-weight[k] = exp(raw[k] × 10) / toplam_exp   # sicaklik parametresi = 10
-```
-
-**Adım 3 — CFS Hesabı:**
-```
-CFS = toplam(weight[k] × sim_kampanya[k]) × 100
-```
-
-Burada `sim_kampanya[k]`, fenomenin ilgili kampanya şablonuna olan SBERT benzerliğidir (analiz_pipeline'da önceden hesaplı).
-
-> CFS'nin mantığı: Marka hangi kampanya tipine ne kadar yakınsa (softmax ağırlıklar), o kampanyada güçlü fenomenlere daha fazla puan verir. Bu, "benzer markaların tercih ettiği fenomenleri öner" fikrinin formülasyonudur.
+**Etik ve hukuki çerçeve:** Veri toplama sürecinde yalnızca kamuya açık içerik ve metrikler kullanılmıştır. Doğrudan mesaj (DM), özel hikâye veya gizli hesap paylaşımı gibi kişisel veri niteliği taşıyan hiçbir alan toplanmamıştır. Veriler veri tabanına işlenmeden önce **KVKK** ve uluslararası veri koruma ilkelerine uygun şekilde anonimleştirilmiş; kullanıcı adları ve kişisel tanımlayıcılar maskelenmiştir. Geliştirme sürecinin Meta başvuru onayı öncesindeki ilk aşamalarında, model mimarisinin test edilmesi amacıyla sentetik profiller de kullanılmıştır.
 
 ---
 
-### 2.4 BAS — Marka Uyum Skoru (Brand Affinity Score)
+## 5. Skorlama Bileşenleri ve Formüller
 
-CFS'siz temel skor — fenomenin genel performansını ölçer:
+Sistem; **kelime düzeyinde**, **anlam düzeyinde**, **sayısal düzeyde**, **kampanya düzeyinde** ve **duygu düzeyinde** olmak üzere beş farklı katmanı birleştiren çok bileşenli bir skorlama mimarisi kullanır. Hiçbir bileşen tek başına karar verici değildir.
 
-```
-BAS = SFS×0.35 + NFS×0.30 + PositiveRatio×0.25 + (100−FakeRisk)×0.10
-```
+### 5.1 NFS — Sayısal Uyum Skoru (Numerical Fit Score)
 
-| Bileşen | Ağırlık | Açıklama |
-|---------|---------|----------|
-| SFS | %35 | Semantik metin benzerliği |
-| NFS | %30 | Sayısal performans |
-| PositiveRatio | %25 | BERT duygu analizinden pozitif yorum oranı |
-| (100−FakeRisk) | %10 | Sahte takipçi riski terslemesi |
-
----
-
-### 2.5 Final Score — Kampanyaya Özel Nihai Skor
-
-CFS dahil, kampanyaya özelleştirilmiş skor:
+Fenomenin sayısal performansını; etkileşim gücü, takipçi büyümesi ve yayın sıklığı üzerinden 0–100 aralığında ölçer.
 
 ```
-Final = SFS×0.30 + NFS×0.25 + CFS×0.25 + PositiveRatio×0.10 + (100−FakeRisk)×0.10
+ER  (Etkileşim Oranı)     = (Toplam Beğeni + Toplam Yorum) / Toplam Takipçi × 100
+FGR (Takipçi Artış Oranı) = (Dönem Sonu Takipçi − Dönem Başı Takipçi) / Dönem Başı Takipçi × 100
+Paylaşım Sıklığı          = Toplam Gönderi Sayısı / Zaman Dönemi
+
+NFS = Σ wᵢ × özellik_i (normalize edilmiş) → 0–100 aralığına ölçeklenir
 ```
 
-| Bileşen | Ağırlık | Değişim |
-|---------|---------|---------|
-| SFS | %30 | BAS'a göre -5 puan |
-| NFS | %25 | BAS'a göre -5 puan |
-| **CFS** | **%25** | **Yeni eklenen kampanya boyutu** |
-| PositiveRatio | %10 | BAS'a göre -15 puan |
-| (100−FakeRisk) | %10 | Aynı |
+### 5.2 SFS — Semantik Uyum Skoru (Semantic Fit Score)
 
----
+Marka metni ile fenomenin biyografi/gönderi/hashtag metni arasındaki **SBERT** tabanlı anlamsal benzerlik.
 
-### 2.6 Duygu Analizi
+```
+SFS = cosine_similarity( SBERT(marka_metni), SBERT(fenomen_metni) ) × 100
+```
 
-Her fenomenin yorumları `transformers` pipeline ile analiz edilir:
+- **Model:** `paraphrase-multilingual-MiniLM-L12-v2` (Sentence-BERT, çok dilli, 512 boyutlu yoğun vektör uzayı)
+- Fenomen embedding'leri pipeline aşamasında önceden hesaplanır; marka embedding'i her istekte anlık hesaplanır.
+- "Moda", "kombin", "stil", "giyim" gibi farklı ama anlamca yakın ifadeleri klasik anahtar kelime eşleştirmesinin ötesinde yakalar.
+
+### 5.3 KFS — Anahtar Kelime Uyum Skoru (Keyword Frequency Score)
+
+SBERT'in açıklanabilirliğini desteklemek amacıyla eklenen **TF-IDF tabanlı** istatistiksel destek katmanı.
+
+```
+tf(t,d)   = f(t) / n
+idf(t)    = log( |D| / |{d : t ∈ d}| )
+tfidf(t,d)= tf(t,d) × idf(t)
+
+KFS = cosine_similarity( TFIDF(kampanya_metni), TFIDF(fenomen_metni) ) × 100
+```
+
+KFS, ana karar mekanizması değildir; SBERT'in ürettiği anlamsal skoru kelime düzeyinde doğrulayan, açıklanabilir bir yardımcı sinyaldir.
+
+### 5.4 CFS — Kampanya Uyum Skoru (Campaign Fit Score)
+
+Fenomenin, markanın hedeflediği kampanya türüne (spor, moda, teknoloji, yemek, anne-bebek, oyun) ne kadar uygun olduğunu işbirlikçi bir mantıkla ölçer.
+
+```
+raw[k]    = cosine_sim( marka_embedding, kampanya_embedding[k] )
+weight[k] = softmax( raw[k] × T )                     # T = sıcaklık parametresi
+CFS       = Σ weight[k] × sim_kampanya[k] × 100
+```
+
+CFS'nin mantığı: marka metni hangi kampanya tipine ne kadar yakınsa (softmax ağırlıklar), o kampanya türünde güçlü performans gösteren fenomenlere daha fazla ağırlık verilir — "benzer markaların tercih ettiği fenomenleri öner" prensibinin matematiksel karşılığıdır.
+
+### 5.5 Duygu Analizi (Sentiment)
 
 ```python
 from transformers import pipeline
-sentiment = pipeline(
-    "sentiment-analysis",
-    model="nlptown/bert-base-multilingual-uncased-sentiment"
-)
+sentiment = pipeline("sentiment-analysis", model="savasy/bert-base-turkish-sentiment-cased")
 ```
 
-- 1–5 yıldız çıktısı → pozitif (4–5 yıldız) / nötr (3) / negatif (1–2) sınıflandırması
-- `positive_ratio = pozitif_yorum_sayısı / toplam_yorum × 100`
+- Türkçenin sondan eklemeli yapısına uygun **Turkish BERT** modeli kullanılır.
+- Fenomen başına en fazla 30 gönderi metni örneklenir; her gönderi pozitif/negatif olarak sınıflandırılır.
+- Türetilen öznitelikler: `positive_ratio`, `negative_ratio`, `avg_sentiment_score`, `avg_signed_sentiment` (final skor hesaplamasında normalize edilerek kullanılır).
 
----
+### 5.6 BAS — Marka Uyum Skoru (Brand Alignment Score)
 
-### 2.7 Sahte Takipçi Tespiti
+Belirli bir kampanya seçimi olmaksızın, fenomenin **genel** marka uyumunu ölçen kampanyadan bağımsız temel skor.
 
-Makine öğrenmesi tabanlı risk skoru:
-
-- Katılım anormalliği, takipçi artış tutarsızlığı gibi özellikler kullanılır
-- Risk kategorileri: `DÜŞÜK` / `ORTA` / `YÜKSEK`
-
----
-
-### 2.8 K-Means Kümeleme (Benzer Fenomenler)
-
-```python
-from sklearn.cluster import KMeans
-kmeans = KMeans(n_clusters=8, random_state=42)
-kmeans.fit(feature_matrix)
+```
+BAS = SFS × 0.35 + NFS × 0.30 + Sentiment_norm × 0.25 + (100 − FakeRisk) × 0.10
 ```
 
-Bir fenomenin "Benzer" butonuna tıklandığında, aynı kümedeki diğer fenomenler `/influencers/<name>/similar` endpoint'i üzerinden döner.
+### 5.7 Final Score — Çok Katmanlı Hibrit Nihai Skor
+
+Sistemin en özgün yönü, tek bir modelin veya tek bir skorun tahminine bağımlı kalmamasıdır. Altı bağımsız bileşeni birleştiren ağırlıklı bir mimari kullanılır:
+
+```
+Final Score = SFS × 0.35
+            + NFS × 0.25
+            + CFS × 0.15
+            + KFS × 0.15
+            + Sentiment_norm × 0.10
+            − RiskPenalty
+```
+
+| Bileşen | Ağırlık | Ölçtüğü Sinyal |
+|---|---|---|
+| SFS | %35 | Sentence-BERT tabanlı derin anlamsal yakınlık |
+| NFS | %25 | Etkileşim oranı, büyüme ve paylaşım kalitesi |
+| CFS | %15 | Kampanya / kitle uyum oranı |
+| KFS | %15 | Kelime frekansı tabanlı istatistiksel destek |
+| Sentiment | %10 | Turkish BERT pozitif kitle duygu tonu |
+| RiskPenalty | dinamik | Sahte takipçi tespiti durumunda uygulanan ceza puanı |
+
+Ayrıca sıralama motorunda **kampanya–kategori alaka kontrolü** uygulanır: anlamsal skoru yüksek olsa da kampanya kategorisiyle örtüşmeyen fenomenlerin üst sıralara çıkması sınırlandırılır (örn. moda kampanyasında sadece ortak kelime nedeniyle öne çıkan bir spor hesabı cezalandırılır). Yeterli sayıda öneri üretilemediğinde bu filtre esnetilir.
 
 ---
 
-## 3. Makine Öğrenmesi Pipeline
+## 6. Sahte Takipçi Risk Skoru
 
-### 3.1 Etiket Üretimi (Kural Tabanlı)
+Risk skoru üç ağırlıklı sinyalin birleşiminden oluşur ve 0–100 aralığında üretilir:
 
-Model eğitimi için etiketler deterministik kurallarla üretilir:
+| Sinyal | Ağırlık | Mantık |
+|---|---|---|
+| Etkileşim Anomalisi | %50 | ER < %0.5 → 85 risk puanı (pasif/satın alınmış takipçi şüphesi); ER > %10 → 60 risk puanı (bot beğenisi şüphesi); %1–%5 aralığı normal kabul edilir |
+| Büyüme Tutarsızlığı | %30 | Takipçi Büyüme Oranı (FGR) bazlı ani/doğrusal olmayan sıçramaların tespiti |
+| Erişim/Takipçi Oranı | %20 | Reach ile takipçi sayısı arasındaki orantısızlığın kontrolü |
+
+**Risk kategorileri:** `≥70` → **YÜKSEK** · `≥50` → **ORTA** · `≤30` → **DÜŞÜK**
+
+Bu skor, BAS ve Final Score hesaplamalarına `(100 − FakeRisk)` terimi olarak dahil edilerek sahte takipçi riski yüksek hesapların öneri sıralamasında otomatik olarak geri plana atılması sağlanır.
+
+---
+
+## 7. Makine Öğrenmesi Pipeline'ı
+
+### 7.1 Etiket Üretimi
+
+Model eğitimi için uygunluk etiketleri kural tabanlı olarak üretilmiştir (her fenomen × 6 kampanya kombinasyonu için, toplam 810 örnek):
 
 ```python
-if sfs > 0.35 and nfs > 25 and positive_ratio > 60:
+if sfs > eşik_yüksek and nfs > eşik_orta and positive_ratio > eşik_pozitif:
     label = "uygun"
-elif sfs < 0.20 or nfs < 15 or positive_ratio < 45:
+elif sfs < eşik_düşük or nfs < eşik_alt or positive_ratio < eşik_alt:
     label = "uygun_degil"
 else:
     label = "orta"
 ```
 
-Her fenomen × 6 kampanya kombinasyonu için bu kural uygulanır → toplam ~600 örnek.
+### 7.2 Özellik Mühendisliği
 
-### 3.2 Özellik Mühendisliği
+- Sayısal değişkenler (ER, FGR, paylaşım sıklığı) **StandardScaler (Z-score)** ile normalize edilmiştir — yalnızca mesafeye duyarlı Logistic Regression için; ağaç tabanlı modeller (XGBoost, LightGBM, Random Forest) normalizasyona ihtiyaç duymaz.
+- Kategorik değişkenler one-hot encoding ile dönüştürülmüştür.
+- Pearson ve Spearman korelasyon analizleriyle modele anlamlı katkı sağlamayan değişkenler elenmiştir.
+- Sınıf dengesizliğini azaltmak amacıyla **SMOTE** uygulanmıştır.
+- Veri sızıntısını (leakage) önlemek için encoding ve örnekleme adımları `Pipeline` nesnesi içinde, çapraz doğrulama döngüsünden önce değil **döngünün içinde** uygulanmıştır.
 
-```python
-df_enc = pd.get_dummies(df_model, columns=["category", "account_type", "campaign"])
-X = df_enc.drop(columns=["influencer_name", "label"])
-```
+### 7.3 Karşılaştırılan Modeller
 
-One-hot encoding sonrası: `engagement_rate`, `FGR`, `posts_per_month`, `NFS`, `SFS`, `positive_ratio`, `negative_ratio`, `avg_sentiment_score` + kategorik değişkenlerin binary kodlamaları.
+| Model | Rol |
+|---|---|
+| **XGBoost** | Ana karar destek modeli — ikinci derece türev bilgisiyle optimize edilen gradyan artırma algoritması |
+| LightGBM | Karşılaştırma modeli — yüksek hız, düşük bellek kullanımı |
+| Random Forest | Referans sınıflandırıcı — topluluk öğrenmesiyle overfitting kontrolü |
+| Logistic Regression | Klasik istatistiksel temel çizgi (baseline) modeli |
+| Voting Classifier (LR+RF+LightGBM) | Deneysel karşılaştırma amaçlı topluluk modeli |
+| Linear/RF/XGBoost Regressor | Deneysel: fenomenin beklenen etkileşim oranını tahmin eden ek regresyon modelleri |
 
-### 3.3 Model Eğitimi
+### 7.4 XGBoost'un Seçilme Gerekçesi
 
-```python
-from xgboost import XGBClassifier
-xgb = XGBClassifier(
-    n_estimators=100, max_depth=4, learning_rate=0.1,
-    use_label_encoder=False, eval_metric="mlogloss", random_state=42
-)
-xgb.fit(X_train, y_train_encoded)
-```
-
-Karşılaştırma için LightGBM ve RandomForest de eğitilir (`_validate_models.py`).
-
----
-
-## 4. Model Doğrulama Sonuçları
-
-`_validate_models.py` scripti mevcut pkl dosyalarından metrikleri yeniden üretir ve grafik çıktılar oluşturur.
-
-### 4.1 Model Karşılaştırması (Test Seti, %20)
-
-| Model | Accuracy | F1 (Weighted) | Precision | Recall |
-|-------|----------|--------------|-----------|--------|
-| **XGBoost** | **1.000** | **1.000** | **1.000** | **1.000** |
-| LightGBM | 0.958 | 0.957 | 0.958 | 0.958 |
-| RandomForest | 0.958 | 0.958 | 0.958 | 0.958 |
-
-**Neden XGBoost %100 doğruluk?**
-Etiketler deterministik eşik kurallarından üretildiği için (SFS>0.35 VE NFS>25 VE PR>60 → uygun), XGBoost bu kuralları tamamen öğrenir ve test setindeki örneklerde hatasız tahmin eder. Bu bir veri sızıntısı (data leakage) değil, kural tabanlı etiketlemenin doğal sonucudur.
-
-### 4.2 Overfitting Analizi (Train vs Test)
-
-| Model | Train | Test | Fark | Durum |
-|-------|-------|------|------|-------|
-| XGBoost | 1.000 | 1.000 | 0.000 | OK |
-| LightGBM | 0.974 | 0.958 | 0.016 | OK |
-| RandomForest | 1.000 | 0.958 | 0.042 | OK |
-
-Fark eşiği: 0.10 — üç model de aşmıyor.
-
-### 4.3 5-Fold Çapraz Doğrulama (F1 Weighted)
-
-| Model | Ortalama | Std Sapma |
-|-------|----------|-----------|
-| XGBoost | 0.990 | ±0.009 |
-| LightGBM | 0.993 | ±0.003 |
-| RandomForest | 0.966 | ±0.015 |
-
-### 4.4 Üretilen Rapor Dosyaları
-
-```
-model_reports/
-├── confusion_matrices.png      # Üç modelin karmaşıklık matrisleri (yan yana)
-├── feature_importance.png      # XGBoost top-15 özellik önem grafiği
-├── model_comparison.png        # Accuracy/F1/Precision/Recall karşılaştırma barları
-└── model_validation_report.txt # Tüm metriklerin yazılı özet raporu
-```
+XGBoost; tablosal verilerde yüksek performans, hızlı çıkarım ve `ml_label` (`uygun` / `orta` / `uygun_degil`) üzerinden **açıklanabilir** bir sınıflandırma sunması nedeniyle ana model olarak seçilmiştir. Ancak XGBoost **hiçbir zaman tek başına karar verici olarak konumlandırılmamıştır**: veri setindeki fenomen sayısının sınırlı olması ve etiketlerin kural tabanlı üretilmiş olması, modelin yalnızca bu kuralları ezberleme riskini taşımasına yol açmaktadır. Bu nedenle XGBoost çıktısı, sistemde nihai sıralamayı belirleyen **tek bir karar sinyali** olarak değil, SFS/NFS/CFS/KFS/Sentiment/Risk skorlarıyla birlikte değerlendirilen **bir bileşen** olarak kullanılır.
 
 ---
 
-## 5. API Endpointleri
+## 8. Model Performans Sonuçları
 
-Tüm endpoint'ler `app.py` içinde tanımlıdır.
+### 8.1 5-Fold Çapraz Doğrulama (F1 Weighted)
 
-### GET /stats
+| Model | Fold-1 | Fold-2 | Fold-3 | Fold-4 | Fold-5 | Ortalama F1 | Std. Sapma |
+|---|---|---|---|---|---|---|---|
+| **XGBoost** | 1.000 | 1.000 | 1.000 | 0.993 | 1.000 | **0.999** | 0.003 |
+| LightGBM | 1.000 | 1.000 | 1.000 | 0.993 | 0.994 | 0.997 | 0.003 |
+| Random Forest | 1.000 | 1.000 | 1.000 | 0.985 | 0.989 | 0.995 | 0.007 |
+| Logistic Regression | 0.985 | 0.977 | 0.961 | 0.971 | 0.960 | 0.971 | 0.010 |
 
-Sistem özeti — sayfa yüklenince otomatik çağrılır.
+### 8.2 Overfitting Analizi
+
+XGBoost modelinin eğitim/test doğrulukları arasındaki fark yalnızca **−0.002** seviyesinde kalmıştır; bu da modelin aşırı öğrenme açısından kontrollü bir sınırda olduğunu göstermektedir. Bununla birlikte, **yüksek doğruluk değerleri yalnızca model başarısı olarak yorumlanmamıştır**: etiketlerin kural tabanlı üretilmiş olması, ağaç tabanlı modellerin bu yapıyı kolayca öğrenebilmesine ve dolayısıyla yapay olarak yüksek skorlar üretmesine yol açabilmektedir. Bu nedenle model çıktıları; overfitting analizi, çapraz doğrulama, sınıf bazlı performans ve **manuel/nitel değerlendirme** (gerçek hesapların kampanya geçmişiyle karşılaştırılması) ile birlikte yorumlanmıştır.
+
+### 8.3 Manuel / Nitel Değerlendirme
+
+Öneri listelerindeki fenomen hesapları; kampanya metniyle anlamsal bağ kurup kurmadığı, içerik kategorisinin kampanya ile uyumu ve geçmişte ilgili alanda reklam/işbirliği içeriği üretip üretmediği açısından nitel olarak incelenmiş ve sistem bu bulgular doğrultusunda iyileştirilmiştir.
+
+---
+
+## 9. Benzer Fenomen Sistemi (CF + K-Means)
+
+Bir fenomen için "benzer fenomenler" listesi, **hibrit bir yaklaşımla** üretilir:
+
+1. **Birincil yöntem — Item-based Collaborative Filtering:** Fenomenler arası davranışsal profil benzerliği (etkileşim, büyüme, paylaşım sıklığı), önceden hesaplanmış **135×135 boyutlu fenomen-fenomen benzerlik matrisi** (`cf_similarity_matrix.pkl`) üzerinden değerlendirilir.
+2. **Yedek yöntem (fallback) — K-Means Kümeleme:** CF matrisi yetersiz sonuç ürettiğinde, sayısal performans ve etkileşim değişkenleri üzerinden oluşturulmuş **K-Means kümeleri** devreye girer.
+
+K-Means sonucunda fenomenler 4 ana kümeye ayrılmıştır:
+
+| Küme | Tanım | Hesap Sayısı |
+|---|---|---|
+| Küme 0 | Düşük etkileşimli genel profiller | 42 |
+| Küme 1 | Orta düzeyde istikrarlı profiller | 35 |
+| Küme 2 | Yüksek etkileşimli niş üreticiler | 39 |
+| Küme 3 | Çok yüksek büyüme oranına sahip öncüler | 19 |
+
+`GET /influencers/<name>/similar` uç noktası bu hibrit benzerlik mekanizmasını kullanarak seçilen fenomene en yakın alternatifleri döner.
+
+---
+
+## 10. Backend ve API Katmanı
+
+- **Framework:** Flask (REST API, JSON tabanlı istek/yanıt döngüsü)
+- **Veri katmanı:** MongoDB (birincil) + `.pkl` checkpoint dosyaları (fallback) — MongoDB bağlantısı olmadığında sistem otomatik olarak checkpoint'lerden çalışmaya devam eder
+- **Bellek optimizasyonu:** SBERT ve XGBoost modelleri uygulama başlangıcında **bir kez** belleğe yüklenir; her istek için yeniden eğitim veya yeniden yükleme yapılmaz
+
+### Uç Noktalar
+
+| Endpoint | Metod | Açıklama |
+|---|---|---|
+| `/recommend` | POST | Marka/kampanya metnini alır; SFS, NFS, CFS, KFS, duygu ve risk skorlarını birleştirerek sıralı fenomen önerisi döner |
+| `/stats` | GET | Toplam fenomen sayısı, ortalama skorlar, kategori dağılımı gibi genel istatistikleri döner |
+| `/campaigns` | GET | Sistemde tanımlı 6 kampanya şablonu ve ağırlıklarını döner |
+| `/influencers` | GET | Tüm fenomenleri (isteğe bağlı kategori filtresiyle) skor sırasına göre listeler |
+| `/influencers/<name>/similar` | GET | CF + K-Means hibrit yaklaşımıyla benzer fenomenleri döner |
+
+**Örnek `/recommend` isteği:**
 
 ```json
 {
-  "success": true,
-  "total_influencers": 100,
-  "avg_NFS": 30.57,
-  "avg_BAS": 53.44,
-  "categories": {"spor": 12, "moda": 10},
-  "account_types": {"mikro": 42, "makro": 41, "mega": 17}
-}
-```
-
----
-
-### GET /influencers?category=spor
-
-Tüm fenomenleri BAS'a göre sıralı döner. İsteğe bağlı kategori filtresi.
-
-```json
-{
-  "success": true,
-  "count": 50,
-  "influencers": [
-    {
-      "influencer_name": "@influencer42",
-      "category": "spor",
-      "account_type": "makro",
-      "BAS": 50.15,
-      "NFS": 65.49,
-      "positive_ratio": 100.0,
-      "risk_category": "DÜŞÜK"
-    }
-  ]
-}
-```
-
----
-
-### POST /recommend
-
-Ana öneri endpoint'i. Marka metni alır, sıralı fenomenleri döner.
-
-**İstek:**
-```json
-{
-  "brand_text": "Spor giyim ve ekipman alanında faaliyet gösteren bir markayız...",
+  "brand_text": "Spor giyim ve ekipman alanında faaliyet gösteren, 18-35 yaş aralığını hedefleyen bir markayız...",
   "top_n": 5
 }
 ```
 
-**Yanıt (özet):**
+**Örnek yanıt (özet):**
+
 ```json
 {
   "success": true,
-  "count": 5,
   "closest_campaign": "spor_kampanyasi",
-  "brand_campaign_weights": {
-    "spor_kampanyasi": 0.412,
-    "moda_kampanyasi": 0.089
-  },
   "recommendations": [
     {
-      "influencer_name": "@influencer42",
-      "final_score": 72.34,
-      "campaign_bas": 58.21,
-      "cfs": 68.45,
-      "sfs": 81.23,
-      "NFS": 65.49,
+      "influencer_name": "@fenomen_42",
+      "final_score": 78.4,
+      "sfs": 81.2, "nfs": 65.5, "cfs": 68.4, "kfs": 54.1,
+      "sentiment_score": 72.0,
       "ml_label": "uygun",
       "risk_category": "DÜŞÜK"
     }
@@ -387,494 +357,162 @@ Ana öneri endpoint'i. Marka metni alır, sıralı fenomenleri döner.
 
 ---
 
-### GET /influencers/\<name\>/similar
+## 11. Frontend Mimarisi
 
-K-Means kümeleme ile aynı gruptaki fenomenleri döner.
+- **Teknoloji:** React + Vite + Tailwind CSS, Axios ile Flask API'sine bağlanır
+- **React seçilme gerekçesi:** bileşen tabanlı yapının hızlı geliştirme imkânı sunması, Vite ile yüksek performanslı derleme ve dinamik arayüzler için yaygın kabul görmesi
 
-```json
-{
-  "success": true,
-  "influencer_name": "@influencer42",
-  "cluster_id": 2,
-  "similar": [...]
-}
+### Temel Arayüz Bileşenleri
+
+| Bölüm | Açıklama |
+|---|---|
+| Sistem Metrikleri Paneli | Kullanıcı girdi yapmadan önce gösterilen genel istatistikler (fenomen sayısı, ortalama NFS vb.) |
+| Kampanya Formu | Marka/kampanya metninin girildiği, hedef kitle ve ürün bilgisinin tanımlandığı alan |
+| Kampanya Uyum Panelleri | Girilen metnin 6 kampanya türüne olan softmax ağırlıklarını gösteren bar/grafik bileşenleri |
+| Skor Kartları | Her fenomen için Final Score, BAS, SFS, NFS, CFS, KFS ve duygu oranını yatay bar grafikleriyle gösteren kartlar |
+| AI Gerekçelendirme Paneli | XGBoost'un ürettiği `ml_label` çıktısını "Neden Önerildi?" başlığıyla kullanıcıya açıklayan bileşen |
+| Benzer Fenomenler Paneli | CF + K-Means hibrit yaklaşımıyla üretilen alternatif öneriler |
+
+---
+
+## 12. Proje Dosya Yapısı
+
+```
+FenomenMarkaUyumu/
+│
+├── app.py                          # Flask REST API — tüm endpoint'ler
+├── .dockerignore
+├── .gitignore
+│
+├── data/                           # Ham veri (CSV)
+│   ├── influencer_posts.csv
+│   ├── influencer_profiles.csv
+│   └── sentiment_cache.csv
+│
+├── db/                             # MongoDB bağlantı katmanı
+│   ├── __init__.py
+│   ├── mongo_client.py
+│   └── mongo_sync.py
+│
+├── docs/                           # Dokümantasyon, QA raporları, görseller
+│   ├── model_reports/
+│   ├── qa_validation_report.md
+│   ├── full_test_ui_pass.png
+│   ├── ranking_ui_verification.png
+│   └── Tablolar.md / Tablolar.html
+│
+├── notebooks/                      # Akademik/keşifsel analiz ortamı
+│   ├── bitirme_projesi_jpynb.ipynb # Ana analiz ve modelleme notebook'u
+│   ├── elbow_method.png
+│   ├── grafik1_kategori_dagilimi.png ... grafik10_top5_oneriler.png
+│   ├── influencer_analysis_results_v2.xlsx
+│   ├── influencer_summary_checkpoint.pkl
+│   ├── best_model_xgb.pkl / label_encoder.pkl / feature_columns.pkl
+│   └── model_karsilastirma*.png
+│
+├── pipeline/                        # Üretim skorlama / pipeline modülleri
+│   ├── analiz_pipeline.py          # Tek seferlik uçtan uca analiz pipeline'ı
+│   ├── build_cf_matrix.py          # 135×135 işbirlikçi benzerlik matrisi üretimi
+│   ├── category_seeds.py / category_utils.py
+│   ├── comment_processor.py        # Yorum/duygu ön işleme
+│   ├── fix_categories.py
+│   ├── influencer_features.py      # Özellik mühendisliği yardımcıları
+│   ├── nfs_scoring.py              # NFS hesaplama modülü
+│   ├── nfs_ridge_model.pkl / nfs_feature_scaler.pkl / nfs_label_scaler.pkl
+│   ├── cf_similarity_matrix.pkl
+│   ├── influencer_summary_checkpoint.pkl
+│   ├── _validate_models.py         # Bağımsız model doğrulama scripti
+│   └── scripts/                    # Rapor/grafik üretim ve bakım scriptleri
+│       ├── generate_charts.py
+│       ├── generate_report3.py / generate_report3b.py
+│       ├── refresh_nfs_checkpoint.py
+│       ├── run_notebook_cells.py
+│       └── run_qa_suite.py
+│
+└── frontend-react/                  # React + Vite kullanıcı arayüzü
+    ├── src/
+    ├── index.html
+    ├── package.json / package-lock.json
+    ├── vite.config.js
+    ├── Dockerfile / nginx.conf
+    └── dist/                        # Üretim build çıktısı
 ```
 
 ---
 
-### GET /campaigns
 
-Her kampanya şablonunun detayları — ortalama benzerlik skorları ve en iyi fenomenler.
-
----
-
-## 6. Frontend Mimarisi
-
-Saf (framework-siz) HTML + JavaScript + CSS. React veya Vue kullanılmamıştır.
-
-### 6.1 index.html Bölümleri
-
-| Bölüm | ID / Sınıf | Açıklama |
-|-------|-----------|----------|
-| Header | `.header` | Logo + API durum göstergesi |
-| Hero | `.hero` | Başlık, özellik hapları (BAS, CFS, ML, Duygu) |
-| İstatistik paneli | `#stats-grid` | 4 stat kart (fenomen, NFS, BAS, kategori) |
-| Form paneli | `#recommend-form` | Marka formu + 6 hızlı şablon butonu |
-| Yükleme | `#loading-section` | Dönen halka animasyonu (istek süresince) |
-| Affinity barları | `#affinity-section` | 6 kampanya ağırlık çubukları |
-| Sonuç kartları | `#results-section` | Influencer kartları grid + CSV butonu |
-| Benzer fenomenler | `#similar-section` | K-Means benzer listesi (isteğe bağlı) |
-| Fenomen listesi | `.browse-panel` | Tüm fenomenler tablosu, kategori filtreli |
-
-### 6.2 app.js — Temel Fonksiyonlar
-
-```javascript
-// Üç form alanını birleştirip tek brand_text üretir
-function composeBrandText() { ... }
-
-// Kampanya ağırlıklarını görsel çubuk olarak render eder
-function renderAffinityBars(weights, closestCamp) { ... }
-
-// Influencer kartlarını grid olarak render eder, CSV için saklar
-function renderRecommendations(data) {
-  _lastResults = data;   // CSV indirme için kaydedilir
-  ...
-}
-
-// Skor bileşenlerini (Final, BAS, CFS, SFS, NFS, Pozitif) yatay bar olarak gösterir
-function renderScoreBars(r, idx) { ... }
-
-// BOM-prefixed CSV oluşturur ve tarayıcıya indirir
-function downloadCSV(data) { ... }
-```
-
-### 6.3 Kategori Renk Sistemi
-
-Her kategorinin kendine ait bir rengi vardır. Influencer kartlarının kenarlığı, avatar arka planı ve skor göstergesi bu renkten türetilir:
-
-```javascript
-const CAT_COLOR = {
-  "spor"       : "#5eead4",   // teal
-  "moda"       : "#f472b6",   // pink
-  "teknoloji"  : "#38bdf8",   // sky blue
-  "yemek"      : "#fb923c",   // orange
-  "anne-bebek" : "#c084fc",   // purple
-  "oyun"       : "#818cf8",   // indigo
-  "saglik"     : "#4ade80",   // green
-  "egitim"     : "#fbbf24",   // amber
-  "lifestyle"  : "#f9a8d4",   // rose
-  "seyahat"    : "#67e8f9",   // cyan
-};
-```
-
-### 6.4 Hızlı Şablon Sistemi
-
-Formda 6 adet hazır şablon butonu bulunur. Her butona tıklandığında `#field-sector`, `#field-audience` ve `#brand-text` alanları otomatik doldurulur:
-
-```javascript
-const TEMPLATES = {
-  spor:      { sector: "Spor giyim ve ekipman", audience: "18-35 yaş...", vision: "..." },
-  moda:      { ... },
-  teknoloji: { ... },
-  yemek:     { ... },
-  annebebek: { ... },
-  oyun:      { ... },
-};
-```
-
----
-
-## 7. Kurulum ve Çalıştırma
-
-### 7.1 Gereksinimler
-
-- Python 3.10 veya üzeri
-- Windows 10/11 (Linux ve macOS da desteklenir)
-- En az 4 GB RAM (BERT modeli için)
-- Yaklaşık 3 GB disk alanı (model dosyaları dahil)
-
-### 7.2 İlk Kurulum
-
-```bat
-git clone <repo-url>
-cd TezBitirme
-
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-```
-
-### 7.3 Analiz Pipeline'ını Çalıştırma (Tek Seferlik)
-
-```bat
-.venv\Scripts\python analiz_pipeline.py
-```
-
-Bu script sırasıyla şunları yapar:
-1. Excel/CSV veri dosyasını yükler ve temizler
-2. NFS (Sayısal Performans Skoru) hesaplar
-3. SBERT ile fenomen ve 6 kampanya embedding'lerini üretir
-4. BERT duygu analizi yapar (yorum bazında)
-5. Sahte takipçi risk skoru hesaplar
-6. XGBoost modelini eğitir ve kaydeder
-7. K-Means kümeleme yapar
-8. Model doğrulama metriklerini hesaplar ve `model_reports/` klasörüne kaydeder
-9. Tüm sonuçları `*.pkl` dosyalarına kaydeder
-
-> **Süre:** İlk çalıştırmada 30–90 dakika (GPU yoksa CPU modunda)
-
-### 7.4 Sunucuyu Başlatma
-
-**Yöntem 1 — start.bat (önerilen, Windows):**
-```bat
-start.bat
-```
-
-`start.bat` şunları yapar:
-1. `.venv` sanal ortamı yoksa oluşturur
-2. Bağımlılıkları günceller
-3. `waitress-serve` ile Flask'ı 4 thread ile başlatır (Windows üretim WSGI sunucusu)
-
-**Yöntem 2 — Doğrudan Python:**
-```bat
-.venv\Scripts\python app.py
-```
-
-### 7.5 ÖNEMLİ — Tarayıcıyı Ne Zaman Açacaksınız?
-
-Terminalde aşağıdaki satırı görene kadar tarayıcıyı açmayın:
-
-```
-* Running on http://0.0.0.0:5000
-```
-veya
-```
-Serving on http://0.0.0.0:5000
-```
-
-BERT ve XGBoost modellerinin yüklenmesi **30–60 saniye** alır. Bu satır görünmeden açılan tarayıcı "bağlanamıyor" hatası verir.
-
-### 7.6 Tarayıcıda Açma
-
-```
-http://127.0.0.1:5000
-```
-
-> `localhost` yerine `127.0.0.1` kullanın. Windows'ta `localhost` bazen IPv6 adresine (`::1`) yönlendirilir; Flask varsayılan olarak yalnızca IPv4'te dinler. Bu durumda tarayıcı bağlanamaz ancak `127.0.0.1` doğrudan IPv4'e gider.
-
----
-
-## 8. Docker ile Dağıtım
-
-### 8.1 İmaj Oluşturma
+## 13. Docker ile Dağıtım
 
 ```bash
-docker build -t fenomen-marka-eslestirme:latest .
-```
-
-> İmaj boyutu yaklaşık 4 GB'tır. PyTorch (CPU-only) + transformers + sentence-transformers kütüphanelerinin büyüklüğünden kaynaklanır.
-
-### 8.2 Çalıştırma
-
-```bash
-docker compose up -d
-```
-
-### 8.3 Durumu Kontrol Etme
-
-```bash
+docker compose up -d --build
 docker compose ps
 docker compose logs -f
 ```
 
-### 8.4 Dockerfile Mantığı
-
-```dockerfile
-FROM python:3.11-slim
-
-# libgomp: LightGBM ve XGBoost için OpenMP desteği
-RUN apt-get install -y libgomp1 curl
-
-# PyTorch'u CPU-only olarak yükle (GPU imajı 3x daha büyük olurdu)
-RUN pip install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
-
-RUN pip install -r requirements.txt
-
-# BERT modelini imaj içine indir — her container başlangıcında indirme olmasın
-RUN python -c "from sentence_transformers import SentenceTransformer; \
-               SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
-
-COPY app.py influencer_features.py *.pkl frontend/ ./
-EXPOSE 5000
-HEALTHCHECK CMD curl -f http://localhost:5000/stats
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "4", \
-     "--timeout", "120", "app:app"]
-```
+- `frontend-react/Dockerfile` + `nginx.conf` ile statik build Nginx üzerinden servis edilir.
+- Backend imajı PyTorch (CPU-only), `transformers` ve `sentence-transformers` bağımlılıklarını içerir; SBERT ve Turkish BERT modelleri imaj build aşamasında önceden indirilerek container başlatma süresi kısaltılır.
+- Tek worker ile çalıştırılması önerilir — büyük model belleği nedeniyle birden fazla worker bellek sorununa yol açabilir.
 
 ---
 
-## 9. CSV Dışa Aktarma
+## 14. Test Süreci
 
-Öneriler sayfasındaki **"CSV İndir"** butonu şu sütunları içeren bir dosya oluşturur:
-
-| Sütun | Açıklama |
-|-------|----------|
-| Fenomen | Kullanıcı adı |
-| Kategori | İçerik kategorisi |
-| Hesap Tipi | mikro / makro / mega |
-| Ülke | Fenomenin ülkesi |
-| Final Score | Nihai sıralama skoru |
-| BAS | Marka uyum skoru |
-| CFS | İşbirlikçi uyum skoru |
-| SFS | Semantik uyum skoru |
-| NFS | Sayısal performans skoru |
-| Pozitif % | Pozitif yorum oranı |
-| Sahte Risk | Sahte takipçi risk skoru |
-| Risk Kategori | DÜŞÜK / ORTA / YÜKSEK |
-| ML Etiket | uygun / orta / uygun_degil |
-| Cinsiyet | Tahmini cinsiyet |
-| Cluster | K-Means küme numarası |
-
-Dosya sonuna marka metni, en yakın kampanya, BAS ve Final formülleri eklenir. Türkçe karakterlerin Excel'de doğru görünmesi için dosya **UTF-8 BOM** ile kaydedilir.
-
-**Dosya adı formatı:** `fenomen_oneri_YYYY-MM-DD-HH-MM.csv`
+| Test Kategorisi | Test Edilen Boyut | Beklenen Sonuç | Sonuç |
+|---|---|---|---|
+| Birim Testleri | Veri ön işleme, hard override, tier katsayısı, skor normalizasyonu | Fonksiyonların doğru çalışması | ✅ Başarılı |
+| Entegrasyon Testleri | Flask API, MongoDB, model yükleme, JSON sözleşmesi | Servislerin birlikte hatasız çalışması | ✅ Başarılı |
+| Algoritmik Doğrulama | Farklı kampanya sorguları (moda/teknoloji vb.) | Kategori sızıntısı (semantic leakage) olmaması | ✅ Başarılı |
+| Sınır Durum Testleri | Boş, geçersiz, aşırı uzun kampanya metinleri | Kontrollü hata / güvenli yanıt | ✅ Başarılı (400 yanıtları doğrulandı) |
+| Yük ve Latency Testleri | Ardışık ve eşzamanlı API istekleri | Zaman aşımı olmadan yanıt | ✅ 10/10 ve 50/50 eşzamanlı istek başarılı |
 
 ---
 
-## 10. Karşılaşılan Hatalar ve Çözümler
+## 15. Veri Dışa Aktarma
 
-Bu bölüm geliştirme sürecinde karşılaşılan gerçek hataları ve çözümlerini belgeler.
+Arayüzdeki **CSV/Excel İndir** özelliği aşağıdaki bilgileri içeren bir çıktı üretir:
 
----
+- Fenomen adı, kategori, hesap tipi, ülke
+- Final Score, BAS, SFS, NFS, CFS, KFS
+- Pozitif/negatif duygu oranı
+- Sahte takipçi risk skoru ve risk kategorisi
+- ML uygunluk etiketi (`uygun` / `orta` / `uygun_degil`)
+- K-Means küme numarası, tahmini demografik bilgi
 
-### Hata 1 — `NameError: name 'nn' is not defined`
-
-**Dosya:** `transformers/integrations/accelerate.py`
-
-**Hata mesajı:**
-```
-NameError: name 'nn' is not defined
-```
-
-**Neden oluştu:**
-`transformers` kütüphanesinin 4.50 ve üzeri sürümlerinde `torch.nn` modülü bir iç dosyaya doğru import edilmemektedir. Bu versiyon kaynaklı bir upstream bug olup pip ile en son sürüm yüklendiğinde otomatik ortaya çıkar.
-
-**Çözüm:**
-`requirements-prod.txt` dosyasında transformers sürümü üst sınırla sabitlendi:
-
-```
-# Önce (hatalı):
-transformers>=4.35
-
-# Sonra (düzeltilmiş):
-transformers>=4.35,<4.50
-```
+Notebook tarafında ek olarak **5 sayfalı bir Excel raporu** (`influencer_analysis_results_v2.xlsx`) üretilmektedir: Tüm Fenomenler, Top-20 Fenomen, Risk Analizi, Kategori Özeti, Kampanya Bazlı Top-5 Öneriler. Türkçe karakter uyumu için CSV çıktıları **UTF-8 BOM** ile kaydedilir.
 
 ---
 
-### Hata 2 — `RuntimeError: Numpy is not available`
+## 16. Kullanılan Teknolojiler
 
-**Hata mesajı:**
-```
-RuntimeError: Numpy is not available
-```
-
-**Neden oluştu:**
-`torch==2.2.2` (CPU-only sürüm) NumPy 2.x ile uyumsuz. pip en son sürümü (`numpy 2.4.6`) yüklediğinde PyTorch'un C uzantıları çöküyor; çünkü PyTorch 2.2.x API katmanı NumPy 1.x arayüzüne göre derlenmiş.
-
-**Çözüm:**
-NumPy sürümü `requirements-prod.txt`'te üst sınırla sabitlendi:
-
-```
-# Önce (hatalı):
-numpy>=1.24
-
-# Sonra (düzeltilmiş):
-numpy>=1.24,<2.0
-```
+| Bileşen | Teknoloji | Görev |
+|---|---|---|
+| Frontend | React + Vite + Tailwind CSS | Etkileşimli kullanıcı paneli |
+| Backend | Flask + REST API + Axios | İş mantığı yönetimi ve API |
+| Anlamsal Analiz | Sentence-BERT — `paraphrase-multilingual-MiniLM-L12-v2` | SFS hesaplama |
+| Anahtar Kelime Analizi | TF-IDF + Cosine Similarity | KFS hesaplama |
+| Duygu Analizi | Turkish BERT — `savasy/bert-base-turkish-sentiment-cased` | Pozitif/negatif duygu sınıflandırması |
+| Sınıflandırma | XGBoost (LightGBM, Random Forest, Logistic Regression karşılaştırmalı) | `ml_label` uygunluk etiketi |
+| Kümeleme | K-Means | Benzer fenomen yedek mekanizması |
+| Benzerlik | Item-based Collaborative Filtering (135×135 matris) | Birincil benzer fenomen mekanizması |
+| Veri Saklama | MongoDB + Pickle Checkpoint | Kalıcı veri ve model deposu |
+| Konteynerleştirme | Docker + Docker Compose | Bağımsız paketleme ve dağıtım |
+| Test | Pytest | Skor, endpoint ve CF matrisi doğrulama |
 
 ---
 
-### Hata 3 — Docker Container Restart Döngüsü
+## 17. Sınırlılıklar
 
-**Belirti:**
-```
-$ docker compose ps
-fenomen_marka_api   Restarting (3)
-```
-
-Container çalışmaya başlar, birkaç saniye içinde çöker ve yeniden başlar. Bu döngü süresiz devam eder.
-
-**Neden oluştu:**
-Docker imajı içinde NumPy 2.x ile PyTorch 2.2.2 yüklüydü (Hata 2 ile aynı uyumsuzluk). Geliştirme ortamında `requirements-prod.txt` düzeltilmişti ancak Docker imajı rebuild edilmemişti; eski katmanlar önbellekten (layer cache) kullanıldı.
-
-**Çözüm:**
-Önce `requirements-prod.txt` düzeltildi, ardından imaj önbelleksiz rebuild edildi:
-
-```bash
-docker build --no-cache -t fenomen-marka-eslestirme:latest .
-docker compose up -d
-```
+- Veri seti **135 fenomen** ile sınırlıdır; bu büyüklük makine öğrenmesi modellerinin genelleme kapasitesi için yetersiz kalabilir.
+- Uygunluk etiketleri (`uygun`/`orta`/`uygun_degil`) **tamamen kural tabanlı** üretilmiştir; gerçek kampanya başarı verisi (satış, marka bilinirliği artışı, dönüşüm oranı) bulunmamaktadır.
+- Veriler yalnızca **Instagram** platformundan toplanmıştır; YouTube, TikTok, X gibi farklı platformların içerik dinamikleri bu bulgularla doğrudan genellenemez.
+- XGBoost'un test setinde ulaştığı çok yüksek doğruluk değerleri, kural tabanlı etiketleme yapısının modeller tarafından kolayca öğrenilmesinden kaynaklanmaktadır; bu nedenle sonuçlar dikkatle yorumlanmalıdır.
 
 ---
 
-### Hata 4 — `docker-compose.yml` Obsolete `version` Uyarısı
+## 18. Akademik ve Etik Bilgilendirme
 
-**Hata mesajı:**
-```
-WARN[0000] /path/docker-compose.yml: `version` is obsolete
-```
-
-**Neden oluştu:**
-Docker Compose v2.x (Compose Specification standardı) artık `version` alanını desteklemiyor. Eski format olan `version: "3.9"` satırı modern Docker Compose sürümlerinde her çalıştırmada uyarı üretiyor.
-
-**Çözüm:**
-`docker-compose.yml` dosyasından `version` satırı kaldırıldı:
-
-```yaml
-# Önce (uyarı veren):
-version: "3.9"
-services:
-  fenomen-marka-api:
-    ...
-
-# Sonra (düzeltilmiş):
-services:
-  fenomen-marka-api:
-    ...
-```
+Bu çalışma **TÜBİTAK 2209-A Üniversite Öğrencileri Araştırma Projeleri Destekleme Programı** kapsamında kabul edilmiş ve desteklenmeye hak kazanmıştır. Veri toplama ve saklama süreçlerinde KVKK ve uluslararası veri koruma ilkelerine tam uyum sağlanmış; tüm kişisel tanımlayıcılar anonimleştirilmiştir. Proje, akademik bir bitirme projesi/araştırma prototipi niteliğindedir ve ticari bir ürün olarak sunulmamaktadır.
 
 ---
 
-### Hata 5 — Flask `send_static_file` ile Index Sayfası 404 Hatası
-
-**Hata mesajı:**
-```
-NotFound: 404 Not Found: ...
-```
-
-**Neden oluştu:**
-Flask uygulamasında index sayfası başlangıçta şöyle servis ediliyordu:
-
-```python
-# Hatalı kod:
-return app.send_static_file("../frontend/index.html")
-```
-
-`send_static_file` yalnızca `static_folder` içindeki dosyaları arar. `../frontend/index.html` yolu `static_folder` sınırını aştığından Flask dosyayı bulamıyordu.
-
-**Çözüm:**
-Flask'ın `template_folder` özelliği tanımlanarak `render_template` ile servis edildi:
-
-```python
-# app.py — Flask uygulama tanımı:
-app = Flask(__name__,
-            static_folder="frontend/static",
-            template_folder="frontend")   # index.html buradan okunur
-
-# Route:
-@app.route("/")
-def index():
-    return render_template("index.html")  # artık çalışıyor
-```
-
----
-
-### Hata 6 — Tarayıcı API'ye Bağlanamıyor ("Kontrol ediliyor…" Kalıyor)
-
-**Belirti:**
-- Header'daki API durumu "Kontrol ediliyor…" yazısında sürekli kalıyor
-- "Tüm Fenomenler" tablosu "Yükleniyor…" yazısından ilerlemiyor
-- Stat kartları iskelet (yükleniyor) görünümünde kalıyor
-
-**JavaScript akışı:**
-Sayfa yüklendiğinde `init()` fonksiyonu çalışır:
-```javascript
-(async function init() {
-  await checkApi();   // /stats endpoint'ini çeker
-  await Promise.all([loadStats(), loadInfluencers()]);
-})();
-```
-`checkApi()` tamamlanmadan `loadStats()` ve `loadInfluencers()` başlamaz. Eğer `fetch("/stats")` askıda kalırsa (ne başarı ne hata dönerse) tüm başlangıç süreci durur.
-
-**Neden oluştu — Üç farklı senaryo:**
-
-**Senaryo A — Eski process port'u tutuyor:**
-Önceki oturumdan kalan `python.exe` process'i port 5000'i tutuyordu. `start.bat` ile başlatılan `waitress` aynı port'a bağlanamadı, hata vererek kapandı. Tarayıcı kırık durumda olan eski sunucuya erişmeye çalıştı.
-
-**Senaryo B — `localhost` IPv6'ya yönleniyor:**
-Windows'ta `localhost` hem `127.0.0.1` (IPv4) hem `::1` (IPv6) olarak tanımlıdır. Modern Edge ve Chrome tarayıcılar IPv6'yı öncelikli olarak dener. Flask'ın `0.0.0.0:5000` bağlaması yalnızca IPv4 arayüzlerini kapsar; IPv6 adresini kapsamaz. Tarayıcı `::1:5000`'e bağlanmaya çalışır, bağlantı reddedilir.
-
-**Senaryo C — Tarayıcı çok erken açıldı:**
-BERT (sentence-transformers) ve XGBoost modellerinin yüklenmesi 30–60 saniye alır. Sunucu bu sürede `LISTENING` durumuna geçemez. Bu süre dolmadan açılan tarayıcı "Bağlantı reddedildi" hatası alır. JavaScript hiç çalışmaz, "Kontrol ediliyor…" metni statik HTML'de kaldığı için görünmeye devam eder.
-
-**Çözüm:**
-
-1. Eski process temizlendi:
-```powershell
-Stop-Process -Id <PID> -Force
-```
-
-2. Sunucu yeniden başlatılıp hazır olana kadar beklendi:
-```bash
-until curl -s http://127.0.0.1:5000/stats > /dev/null; do sleep 3; done
-echo "Sunucu hazir"
-```
-
-3. Tarayıcıda `localhost` yerine `127.0.0.1` kullanıldı:
-```
-http://127.0.0.1:5000
-```
-
-**Önleyici kural:** `start.bat` terminalde `Serving on http://0.0.0.0:5000` satırını gösterene kadar tarayıcıyı açmayın.
-
----
-
-### Hata 7 — PowerShell'de Python Kodu Çalıştırırken SyntaxError
-
-**Hata mesajı:**
-```
-SyntaxError: f-string: expecting '}'
-```
-
-**Neden oluştu:**
-Model doğrulama için PowerShell'de `-c` parametresiyle Python kodu çalıştırılmak istendiğinde f-string içindeki çift tırnaklar PowerShell'in kendi dize ayrıştırması ile çakıştı:
-
-```powershell
-# Çalışmayan:
-python -c "print(f'Sonuc: {variable}')"
-# PowerShell burada kendi tırnak kurallarıyla çakışır
-```
-
-**Çözüm:**
-Doğrudan PowerShell üzerinden Python kodu çalıştırmak yerine, tüm doğrulama kodu ayrı bir `.py` dosyasına taşındı:
-
-```powershell
-# Düzeltilmiş:
-python _validate_models.py
-```
-
-Bu yaklaşım aynı zamanda doğrulama kodunun bağımsız ve tekrar çalıştırılabilir bir script olarak kalıcı hale gelmesini sağladı.
-
----
-
-## Teknik Notlar
-
-### Veri Seti Hakkında
-
-Bu projede kullanılan fenomen verileri **sentetik olarak üretilmiştir**. Gerçek kişilerin sosyal medya verileri kullanılmamıştır. Veriler, gerçek influencer dağılımlarını temsil edecek şekilde oluşturulmuş olup yalnızca akademik araştırma amaçlıdır.
-
-### Model Güncelleme
-
-Yeni veri eklendiğinde `analiz_pipeline.py` yeniden çalıştırılmalıdır. `app.py` başlangıçta pkl dosyalarını yükler; pipeline yeniden çalışmadan API güncellenmiş veriyi görmez.
-
-### Üretim Ortamı Notları
-
-- `debug=False` ile çalıştırın (uygulama zaten bu şekilde yapılandırılmış)
-- Windows için `waitress`, Linux ve Docker için `gunicorn` kullanın
-- SBERT modeli başlangıçta bir kez yüklenir, sonraki isteklerde bellekten kullanılır
-- `/recommend` endpoint'i marka embedding'ini her istekte hesaplar (yaklaşık 0.1–0.3 sn ek süre)
-- Tek worker ile başlatın — model büyük RAM kullanır, birden fazla worker bellek sorununa yol açabilir
-
----
-
-*TÜBİTAK 2209-A — Yapay Zekâ Destekli Fenomen–Marka Eşleştirme Sistemi*
+*Yapay Zekâ Destekli Fenomen–Marka Eşleştirme Uygulaması — İstanbul Sağlık ve Teknoloji Üniversitesi, Yazılım Mühendisliği Bölümü - TÜBİTAK 2209-A Onaylı*
